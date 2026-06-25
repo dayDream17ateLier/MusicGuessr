@@ -1,0 +1,1560 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>估歌派對 MusicGuessr</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+    <style>
+        body {
+            font-family: "Helvetica Neue", Arial, sans-serif;
+            background-color: #121212;
+            color: white;
+            text-align: center;
+            padding: 20px;
+            margin: 0;
+        }
+        .container {
+            max-width: 450px;
+            margin: 20px auto;
+            background-color: #1e1e1e;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.6);
+            min-height: 400px;
+            position: relative;
+            z-index: 10;
+        }
+        #main-title { transition: 0.3s; margin-top: 0; font-size: 28px; }
+        
+        /* 動態主題顏色 */
+        .color-anime { color: #ff4500 !important; }
+        .color-jpop { color: #00d2ff !important; }
+        .color-canto { color: #ffb703 !important; }
+        .color-tw { color: #ff9800 !important; } 
+        .color-kpop { color: #ff007f !important; }
+        .color-meme { color: #8a2be2 !important; }
+        .color-survival { color: #ff4d4d !important; }
+        
+        .hidden { display: none !important; }
+
+        .setup-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: left;
+        }
+        .setup-group label { font-weight: bold; color: #ddd; }
+        .setup-group select, .setup-group input {
+            padding: 12px;
+            font-size: 16px;
+            border-radius: 8px;
+            border: 1px solid #555;
+            background-color: #1a1a1a;
+            color: white;
+            width: 100%;
+            box-sizing: border-box;
+            outline: none;
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            font-size: 16px;
+            margin-bottom: 10px;
+            color: #aaa;
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
+        }
+        
+        .turn-indicator {
+            font-size: 20px;
+            color: #fff;
+            font-weight: bold;
+            margin-bottom: 5px;
+            background-color: #333;
+            padding: 10px;
+            border-radius: 10px;
+        }
+        
+        .combo-text {
+            font-size: 18px;
+            font-weight: bold;
+            color: #ff9800;
+            margin-bottom: 15px;
+            animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes pop {
+            0% { transform: scale(0.5); opacity: 0; }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .question-text { font-size: 18px; margin-bottom: 15px; font-weight: bold; line-height: 1.5; min-height: 60px; }
+        
+        .lifeline-box {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .lifeline-btn {
+            background-color: #444;
+            border: 1px solid #666;
+            padding: 8px 16px;
+            font-size: 13px;
+            border-radius: 20px;
+            color: #fff;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .lifeline-btn:hover:not(:disabled) { background-color: #666; }
+        .lifeline-btn:disabled { opacity: 0.25; cursor: not-allowed; border-color: #333; }
+        
+        #lifeline-result {
+            background-color: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 13px;
+            margin-bottom: 15px;
+            text-align: left;
+            line-height: 1.4;
+        }
+
+        .timer-container {
+            width: 100%;
+            height: 12px;
+            background-color: #333;
+            border-radius: 10px;
+            margin: 15px 0 25px 0;
+            overflow: hidden;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);
+        }
+        .timer-bar {
+            height: 100%;
+            width: 100%;
+            background-color: #4CAF50; 
+            border-radius: 10px;
+            transition: width 0.1s linear, background-color 0.3s;
+        }
+
+        .audio-player { width: 100%; margin-bottom: 20px; }
+        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+
+        .option-btn {
+            background-color: #333;
+            color: white;
+            border: 2px solid #555;
+            padding: 15px 10px;
+            font-size: 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: 0.2s;
+            word-wrap: break-word;
+            font-weight: bold;
+        }
+        .option-btn:hover:not(:disabled) { background-color: #555; }
+        .option-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        .btn-correct { background-color: #4CAF50 !important; border-color: #4CAF50 !important; }
+        .btn-wrong { background-color: #ff4d4d !important; border-color: #ff4d4d !important; }
+        
+        .apple-music-link-btn {
+            background-color: #fa243c;
+            color: white;
+            text-decoration: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 20px;
+            transition: 0.3s;
+            box-shadow: 0 4px 10px rgba(250, 36, 60, 0.4);
+        }
+        .apple-music-link-btn:hover { background-color: #d11d31; }
+        
+        .primary-btn {
+            background-color: #fff;
+            border: none;
+            font-size: 20px;
+            padding: 15px 30px;
+            border-radius: 30px;
+            font-weight: bold;
+            width: 100%;
+            margin-top: 10px;
+            color: #121212;
+            transition: 0.3s;
+            cursor: pointer;
+        }
+        .btn-secondary { background-color: #555; color: white; }
+        .btn-secondary:hover { background-color: #666; }
+
+        #loading-msg { color: #ffeb3b; font-size: 14px; margin-bottom: 10px; }
+        .leaderboard { text-align: left; background: #2a2a2a; padding: 20px; border-radius: 10px; margin-top: 20px; }
+        .leaderboard-item { font-size: 20px; padding: 10px 0; border-bottom: 1px solid #444; display: flex; justify-content: space-between; }
+        .leaderboard-item:last-child { border-bottom: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1 id="main-title" class="color-jpop">🎶 估歌派對 MusicGuessr</h1>
+
+    <div id="start-screen">
+        <div class="setup-group">
+            <label>🌍 選擇專屬曲庫</label>
+            <select id="category-select" onchange="updateTheme()">
+                <option value="meme">🤡 迷因大挑戰 (Meme Songs)</option>
+                <option value="anime">🔰 動漫專區 (1980-2026)</option>
+                <option value="jpop00">🇯🇵 J-Pop (2000-2009)</option>
+                <option value="jpop10">🇯🇵 J-Pop (2010-2019)</option>
+                <option value="jpop20">🇯🇵 J-Pop (2020-2026)</option>
+                <option value="canto80">🇭🇰 Canto-Pop (1980-1989)</option>
+                <option value="canto90">🇭🇰 Canto-Pop (1990-1999)</option>
+                <option value="canto00">🇭🇰 Canto-Pop (2000-2009)</option>
+                <option value="canto10">🇭🇰 Canto-Pop (2010-2019)</option>
+                <option value="canto20">🇭🇰 Canto-Pop (2020-2026)</option>
+                <option value="tw00">🇹🇼 TW-Pop (2000-2009)</option>
+                <option value="tw10">🇹🇼 TW-Pop (2010-2019)</option>
+                <option value="tw20">🇹🇼 TW-Pop (2020-2026)</option>
+                <option value="kpop00">🇰🇷 K-Pop (2000-2009)</option>
+                <option value="kpop10">🇰🇷 K-Pop (2010-2019)</option>
+                <option value="kpop20">🇰🇷 K-Pop (2020-2026)</option>
+            </select>
+        </div>
+        <div class="setup-group">
+            <label>🎮 選擇遊玩模式</label>
+            <select id="mode-select" onchange="toggleModeUI()">
+                <option value="solo">👤 單人練功模式</option>
+                <option value="party">👥 多人派對模式 (2-4人)</option>
+                <option value="survival">🔥 一命通關 (生存模式)</option>
+            </select>
+        </div>
+        
+        <div class="setup-group" id="round-group">
+            <label>⏱️ 選擇題數 / 回合數</label>
+            <select id="round-select">
+                <option value="3">3 回合 (快閃熱身)</option>
+                <option value="5" selected>5 回合 (標準局)</option>
+                <option value="10">10 回合 (地獄鐵人賽)</option>
+            </select>
+        </div>
+        
+        <div class="setup-group hidden" id="party-inputs">
+            <label>📝 輸入玩家名字</label>
+            <input type="text" id="p1-name" placeholder="玩家 1 名字" value="玩家 A">
+            <input type="text" id="p2-name" placeholder="玩家 2 名字" value="玩家 B">
+            <input type="text" id="p3-name" placeholder="玩家 3 名字 (可留空)">
+            <input type="text" id="p4-name" placeholder="玩家 4 名字 (可留空)">
+        </div>
+        <button id="start-btn" class="primary-btn" onclick="startGame()">開始遊戲</button>
+    </div>
+
+    <div id="game-screen" class="hidden">
+        <div class="status-bar">
+            <span id="round-counter">進度: 1 / 5</span>
+            <span id="score-display">分數: 0</span>
+        </div>
+        
+        <div class="turn-indicator hidden" id="turn-indicator">現在是 某某 的回合！</div>
+        
+        <div class="lifeline-box" id="lifeline-box">
+            <button class="lifeline-btn" id="lifeline-ai-btn" onclick="useAiLifeline()">🤖 問 AI</button>
+            <button class="lifeline-btn" id="lifeline-time-btn" onclick="useTimeLifeline()">⏳ 加時神器</button>
+        </div>
+        <div id="lifeline-result" class="hidden"></div>
+
+        <div id="combo-display" class="combo-text hidden"></div>
+        
+        <div class="question-text" id="question-text">準備中...</div>
+        <div id="loading-msg">正在尋找歌曲... (可能需要幾秒)</div>
+        
+        <div class="timer-container hidden" id="timer-container">
+            <div class="timer-bar" id="timer-bar"></div>
+        </div>
+        
+        <audio id="music-player" class="audio-player" controls></audio>
+        <div class="options-grid" id="options"></div>
+        
+        <div id="apple-link-container" class="hidden">
+            <a id="apple-music-btn" href="#" target="_blank" class="apple-music-link-btn">
+                🎵 在 Apple Music 聽完整版
+            </a>
+        </div>
+
+        <button id="next-btn" class="primary-btn hidden" onclick="nextTurn()">下一題 ➔</button>
+    </div>
+
+    <div id="end-screen" class="hidden">
+        <h2 id="end-title" style="color: #4CAF50;">🏆 遊戲結束！賽果出爐</h2>
+        <div class="leaderboard" id="leaderboard"></div>
+        
+        <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 25px;">
+            <button class="primary-btn" id="replay-btn" onclick="restartSameSettings()">🔄 原班人馬再玩一次</button>
+            <button class="primary-btn btn-secondary" onclick="location.reload()">🏠 返回主頁重設</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- 時光機與跨年代歌手資料庫 ---
+    // 每個曲庫加入 minYear 同 maxYear
+    const musicDatabase = {
+        meme: {
+            country: "us", themeColor: "#8a2be2", styleClass: "color-meme", minYear: 1970, maxYear: 2026,
+            hitSongs: [
+// 🌐 殿堂級互聯網迷因 (Classic Internet)
+                { search: "Never Gonna Give You Up Rick Astley", display: "Rickroll (Rick Astley)" },
+                { search: "Astronomia Vicetone", display: "黑人抬棺 (Astronomia)" },
+                { search: "Roundabout Yes", display: "To Be Continued... (Roundabout)" },
+                { search: "Can You Feel My Heart Bring Me The Horizon", display: "GigaChad 猛男配樂" },
+                { search: "Shooting Stars Bag Raiders", display: "太空漫遊 (Shooting Stars)" },
+                { search: "Dubidubidu Christell", display: "貓貓揈頭 (Chipi Chipi)" },
+                { search: "All Star Smash Mouth", display: "史力加主題曲 (All Star)" },
+                { search: "Crab Rave Noisestorm", display: "螃蟹舞 (Crab Rave)" },
+                { search: "Careless Whisper George Michael", display: "性感色士風 (Careless Whisper)" },
+                { search: "Run Away SunStroke Project", display: "Epic Sax Guy (Run Away)" },
+                { search: "Harlem Shake Baauer", display: "全民搖擺 (Harlem Shake)" },
+                { search: "Gangnam Style PSY", display: "江南 Style (PSY)" },
+                { search: "Only Time Enya", display: "生無可戀 (Only Time)" },
+                { search: "PPAP PIKOTARO", display: "PPAP (PIKOTARO)" },
+                { search: "The Next Episode Dr Dre", display: "Thug Life 墨鏡 (The Next Episode)" },
+                { search: "See You Again Wiz Khalifa", display: "保羅獲加再見 (See You Again)" },
+                { search: "We Are Number One LazyTown", display: "We Are Number One (LazyTown)" },
+                
+                // 📱 短片/洗腦神曲 (Shorts / TikTok Trends)
+                { search: "Oh No Capone", display: "TikTok 災難 (Oh No)" },
+                { search: "Despacito Luis Fonsi", display: "破億神曲 (Despacito)" },
+                { search: "Dragostea Din Tei O-Zone", display: "麥嘜舞 / 嘜阿喜 (Numa Numa)" },
+                { search: "Tunak Tunak Tun Daler Mehndi", display: "印度 F4 (Tunak Tunak Tun)" },
+                { search: "The 7th Element Vitas", display: "海豚音 (The 7th Element)" },
+                { search: "The Sound of Silence Simon Garfunkel", display: "寂寞孤單冷 (Sound of Silence)" },
+                { search: "Drop It Like It's Hot Snoop Dogg", display: "Snoop Dogg (Drop It Like It's Hot)" },
+                { search: "Dancin Aaron Smith KRONO Remix", display: "經典跳舞 Meme (Dancin)" },
+                { search: "U Got That Halogen", display: "猛男搖擺 (U Got That)" },
+                { search: "Ultimate Denzel Curry", display: "掟水樽 (Ultimate)" },
+                { search: "Run AWOLNATION", display: "逃跑 (Run)" },
+                { search: "Sail AWOLNATION", display: "FAIL 飛天 (Sail)" },
+                { search: "Rasputin Boney M", display: "俄羅斯神曲 (Rasputin)" },
+                { search: "September Earth Wind Fire", display: "9月21日 (September)" },
+                { search: "Take On Me A-ha", display: "經典80s (Take On Me)" },
+                { search: "Africa Toto", display: "I bless the rains (Africa)" },
+                { search: "Peaches Jack Black", display: "庫巴之歌 (Peaches)" },
+                { search: "The Fox Ylvis", display: "狐狸叫 (What Does The Fox Say?)" },
+                { search: "Pumped Up Kicks Foster The People", display: "拔槍 (Pumped Up Kicks)" },
+                { search: "Redbone Childish Gambino", display: "Woke Meme (Redbone)" },
+                { search: "Astronaut In The Ocean Masked Wolf", display: "水底太空人 (Astronaut In The Ocean)" },
+                { search: "Blinding Lights The Weeknd", display: "靈魂出竅 (Blinding Lights)" },
+                { search: "Happy Pharrell Williams", display: "Happy (Pharrell Williams)" },
+                { search: "Turn Down for What DJ Snake", display: "戴墨鏡 (Turn Down for What)" },
+                { search: "Panda Desiigner", display: "Panda (Desiigner)" },
+                { search: "Look At Me XXXTENTACION", display: "爆Bass (Look At Me!)" },
+                { search: "Call Me Maybe Carly Rae Jepsen", display: "Call Me Maybe" },
+                { search: "What Is Love Haddaway", display: "點頭兄弟 (What Is Love)" },
+                { search: "Scatman John", display: "鬼畜口吃 (Scatman)" },
+                { search: "Tubthumping Chumbawamba", display: "I get knocked down (Tubthumping)" },
+                { search: "Barbra Streisand Duck Sauce", display: "Barbra Streisand (Duck Sauce)" },
+                { search: "We No Speak Americano", display: "We No Speak Americano" },
+                { search: "Axel F Crazy Frog", display: "瘋狂青蛙 (Axel F)" },
+                { search: "Oh Yeah Yello", display: "太陽眼鏡 (Oh Yeah)" },
+                { search: "Bones Imagine Dragons", display: "The Boys 專用 (Bones)" },
+
+                // 🎧 遊戲與純音樂迷因 (Gaming / BGM / NCS)
+                { search: "Megalovania Toby Fox", display: "Sans Boss 戰 (Undertale)" },
+                { search: "San Andreas Theme Song", display: "GTA San Andreas Theme" },
+                { search: "Sandstorm Darude", display: "打機必備電音 (Sandstorm)" },
+                { search: "Bangarang Skrillex", display: "MLG 電音 (Bangarang)" },
+                { search: "Xenogenesis TheFatRat", display: "遊戲精華 (Xenogenesis)" },
+                { search: "Faded Alan Walker", display: "傳說電音 (Faded)" },
+                { search: "Spectre Alan Walker", display: "傳說電音 (Spectre)" },
+                { search: "Nova Ahrix", display: "NCS 神曲 (Nova)" },
+                { search: "Hello OMFG", display: "滑稽電音 (Hello)" },
+                { search: "Monkeys Spinning Monkeys Kevin MacLeod", display: "搞笑出糗 (Monkeys Spinning Monkeys)" },
+                { search: "Sneaky Snitch Kevin MacLeod", display: "偷偷摸摸 (Sneaky Snitch)" },
+                { search: "Fluffing a Duck Kevin MacLeod", display: "歡樂搞笑 (Fluffing a Duck)" },
+                { search: "Scheming Weasel Kevin MacLeod", display: "搞怪計謀 (Scheming Weasel)" },
+                { search: "Wet Hands C418", display: "Minecraft 經典 (Wet Hands)" },
+                { search: "Sweden C418", display: "Minecraft 經典 (Sweden)" },
+                { search: "Wii Shop Channel", display: "Wii 商店音樂" },
+                { search: "Mii Channel", display: "Mii 頻道音樂" },
+                { search: "Super Mario Bros Theme", display: "瑪利歐主題曲" },
+                { search: "Coconut Mall", display: "瑪利歐賽車 (Coconut Mall)" },
+                { search: "Bubblegum K.K.", display: "動森 泡泡糖 (Bubblegum K.K.)" },
+                { search: "Kahoot Theme", display: "Kahoot 主題曲" },
+                { search: "Gerudo Valley", display: "薩爾達 (Gerudo Valley)" },
+                { search: "Gourmet Race Kirby", display: "星之卡比 (Gourmet Race)" },
+                { search: "Athletic Theme Yoshi Island", display: "耀西島 (Athletic Theme)" },
+                { search: "Nyan Cat", display: "彩虹貓 (Nyan Cat)" },
+                { search: "Keyboard Cat Play Him Off", display: "鍵盤貓 (Play Him Off)" },
+                { search: "Raining Tacos", display: "墨西哥捲餅雨 (Raining Tacos)" },
+                { search: "Simple and Clean Hikaru Utada", display: "Kingdom Hearts (Simple and Clean)" },
+                { search: "Super Smash Bros Brawl Main Theme", display: "亂鬥大合唱 (SSBB Theme)" },
+                { search: "Halo Theme Mjolnir Mix", display: "廁所大合唱 (Halo Theme)" },
+                { search: "BFG Division Mick Gordon", display: "撕裂他們 (BFG Division)" },
+                { search: "The Only Thing They Fear Is You", display: "毀滅戰士 (DOOM)" },
+                { search: "Razormind Simon Viklund", display: "劫案神曲 (Payday 2)" },
+                { search: "Rules of Nature Metal Gear Rising", display: "切開高達 (Rules of Nature)" },
+                { search: "It Has To Be This Way Metal Gear Rising", display: "議員狂打 (It Has To Be This Way)" },
+                { search: "Bury The Light Casey Edwards", display: "拋棄光芒 (Bury The Light)" },
+                { search: "Devil Trigger Casey Edwards", display: "惡魔扳機 (Devil Trigger)" },
+                { search: "Friday Night Yakuza", display: "星期五之夜 (Friday Night)" },
+                { search: "24 Hour Cinderella Yakuza", display: "24小時灰姑娘 (人中之龍)" },
+                { search: "Last Surprise Persona 5", display: "偷心盜賊 (Last Surprise)" },
+                { search: "Specialist Persona 4", display: "鳴上悠跳舞 (Specialist)" },
+                { search: "Unwelcome School Blue Archive", display: "蔚藍檔案 (Unwelcome School)" },
+                { search: "Usagi Flap Blue Archive", display: "蔚藍檔案 兔子 (Usagi Flap)" },
+
+                // 🌸 動漫、Vaporwave 與 ACG 梗 (Anime & Weeb Memes)
+                { search: "il vento d'oro Yugo Kanno", display: "JoJo 處刑曲 (黃金之風)" },
+                { search: "Awaken Pillar Men Theme", display: "JoJo 月下三兄貴 (Awaken)" },
+                { search: "Running in the 90s Max Coveri", display: "頭文字D 飄移 (Running in the 90s)" },
+                { search: "Deja Vu Dave Rodgers", display: "頭文字D 飄移 (Deja Vu)" },
+                { search: "Gas Gas Gas Manuel", display: "踩盡油門 (Gas Gas Gas)" },
+                { search: "Baka Mitai Ryu ga Gotoku", display: "人中之龍 飲酒歌 (Baka Mitai)" },
+                { search: "Chikatto Chika Chika", display: "輝夜姬 書記舞 (Chika Dance)" },
+                { search: "Renai Circulation Kana Hanazawa", display: "戀愛循環 (花澤香菜)" },
+                { search: "Omae Wa Mou Deadman", display: "你已經死了 (Omae Wa Mou)" },
+                { search: "Plastic Love Mariya Takeuchi", display: "塑膠愛 (Plastic Love)" },
+                { search: "Stay With Me Miki Matsubara", display: "經典 City Pop (Stay With Me)" },
+                { search: "Resonance Home", display: "迷幻 Vaporwave (Resonance)" },
+                { search: "Crystal Dolphin Englewood", display: "Crystal Dolphin (Englewood)" },
+                { search: "Buttercup Jack Stauber", display: "經典洗腦 (Buttercup)" },
+                { search: "Two Time Jack Stauber", display: "Two Time (Jack Stauber)" },
+                { search: "Oh Klahoma Jack Stauber", display: "幽靈挑戰 (Oh Klahoma)" },
+                { search: "Flamingo Kero Kero Bonito", display: "點頭粉紅鶴 (Flamingo)" },
+                { search: "Enjoy Yourself Saint Pepsi", display: "麥當勞月亮男 (Enjoy Yourself)" },
+                { search: "Macintosh Plus 420", display: "Vaporwave 神曲 (Lisa Frank 420)" },
+                { search: "Shiki No Uta Minmi", display: "Samurai Champloo (Shiki No Uta)" },
+                { search: "Guts Theme Berserk", display: "絕望劍士 (Guts Theme)" },
+                { search: "Bad Apple Nomico", display: "壞蘋果 (Bad Apple!!)" },
+                { search: "Marisa Stole the Precious Thing", display: "魔理沙偷走重要的東西" },
+                { search: "Caramelldansen Caramell", display: "焦糖舞 (CaramellDansen)" },
+                { search: "Ievan Polkka Hatsune Miku", display: "甩蔥歌 (Ievan Polkka)" },
+                { search: "Donut Hole Kenshi Yonezu", display: "甜甜圈洞 (Donut Hole)" },
+                { search: "Rolling Girl Wowaka", display: "滾動女孩 (Rolling Girl)" },
+                { search: "Senbonzakura Kurousa-P", display: "千本櫻 (Senbonzakura)" },
+                { search: "Ghost Rule DECO*27", display: "Ghost Rule (DECO*27)" },
+                { search: "Gimme Chocolate BABYMETAL", display: "Gimme Chocolate!! (BABYMETAL)" }
+            ]
+        },
+        anime: {
+            country: "jp", themeColor: "#ff4500", styleClass: "color-anime", minYear: 1980, maxYear: 2026,
+            hitSongs: [
+                { search: "Idol YOASOBI", display: "アイドル (推しの子)" },
+                { search: "Bling-Bang-Bang-Born Creepy Nuts", display: "Bling-Bang-Bang-Born (肌肉魔法使)" },
+                { search: "KICK BACK Kenshi Yonezu", display: "KICK BACK (鏈鋸人)" },
+                { search: "紅蓮華 LiSA", display: "紅蓮華 (鬼滅之刃)" },
+                { search: "炎 LiSA", display: "炎 (鬼滅之刃)" },
+                { search: "残響散歌 Aimer", display: "残響散歌 (鬼滅之刃)" },
+                { search: "廻廻奇譚 Eve", display: "廻廻奇譚 (咒術迴戰)" },
+                { search: "青のすみか Tatsuya Kitani", display: "青のすみか (咒術迴戰)" },
+                { search: "SPECIALZ King Gnu", display: "SPECIALZ (咒術迴戰)" },
+                { search: "一途 King Gnu", display: "一途 (咒術迴戰 0)" },
+                { search: "逆夢 King Gnu", display: "逆夢 (咒術迴戰 0)" },
+                { search: "勇者 YOASOBI", display: "勇者 (葬送的芙莉蓮)" },
+                { search: "晴る ヨルシカ", display: "晴る (葬送的芙莉蓮)" },
+                { search: "Anytime Anywhere milet", display: "Anytime Anywhere (葬送的芙莉蓮)" },
+                { search: "ミックスナッツ Official髭男dism", display: "ミックスナッツ (SPY×FAMILY)" },
+                { search: "喜劇 Gen Hoshino", display: "喜劇 (SPY×FAMILY)" },
+                { search: "祝福 YOASOBI", display: "祝福 (機動戰士高達 水星的魔女)" },
+                { search: "slash yama", display: "slash (機動戰士高達 水星的魔女)" },
+                { search: "第ゼロ感 10-FEET", display: "第ゼロ感 (THE FIRST SLAM DUNK)" },
+                { search: "新時代 Ado", display: "新時代 (One Piece Film Red)" },
+                { search: "逆光 Ado", display: "逆光 (One Piece Film Red)" },
+                { search: "最高到達点 SEKAI NO OWARI", display: "最高到達点 (One Piece)" },
+                { search: "メフィスト 女王蜂", display: "メフィスト (推しの子)" },
+                { search: "ファタール GEMN", display: "ファタール (推しの子)" },
+                { search: "青春コンプレックス 結束バンド", display: "青春コンプレックス (孤獨搖滾!)" },
+                { search: "ギターと孤独と蒼い惑星 結束バンド", display: "ギターと孤独と蒼い惑星 (孤獨搖滾!)" },
+                { search: "星座になれたら 結束バンド", display: "星座になれたら (孤獨搖滾!)" },
+                { search: "ちゅ、多様性。 ano", display: "ちゅ、多様性。 (鏈鋸人)" },
+                { search: "悪魔の子 SiM", display: "悪魔の子 (進擊的巨人)" },
+                { search: "僕の戦争 Shinsei Kamattechan", display: "僕の戦争 (進擊的巨人)" },
+                { search: "花になって 緑黄色社会", display: "花になって (藥師少女的獨語)" },
+                { search: "花の塔 さユり", display: "花の塔 (Lycoris Recoil)" },
+                { search: "ALIVE ClariS", display: "ALIVE (Lycoris Recoil)" },
+                { search: "トウキョウ・シャンディ・ランデヴ MAISONdes", display: "トウキョウ・シャンディ・ランデヴ (福星小子)" },
+                { search: "シカ色デイズ", display: "シカ色デイズ (鹿乃子乃子乃子虎視眈眈)" },
+                { search: "オトノケ Creepy Nuts", display: "オトノケ (膽大黨)" },
+                { search: "ライラック Mrs. GREEN APPLE", display: "ライラック (失憶投捕)" },
+                { search: "絶対零度 なとり", display: "絶対零度 (防風少年)" },
+                { search: "Abyss YUNGBLUD", display: "Abyss (怪獸8號)" },
+                { search: "UNDEAD YOASOBI", display: "UNDEAD (物語系列)" },
+                { search: "Bite Me Kiro Akiyama", display: "Bite Me (藍色監獄)" },
+                { search: "VIVID VICE Who-ya Extended", display: "VIVID VICE (咒術迴戰)" },
+                { search: "more than words Hitsujibungaku", display: "more than words (咒術迴戰)" },
+                { search: "LOST IN PARADISE ALI", display: "LOST IN PARADISE (咒術迴戰)" },
+                { search: "怪物 YOASOBI", display: "怪物 (BEASTARS)" },
+                { search: "優しい彗星 YOASOBI", display: "優しい彗星 (BEASTARS)" },
+                { search: "DADDY ! DADDY ! DO ! Masayuki Suzuki", display: "DADDY ! DADDY ! DO ! (輝夜姬想讓人告白)" },
+                { search: "GIRI GIRI Masayuki Suzuki", display: "GIRI GIRI (輝夜姬想讓人告白)" },
+                { search: "チキチキバンバン QUEENDOM", display: "チキチキバンバン (派對咖孔明)" },
+
+                // === 🔥 2010-2019 殿堂級神曲 (巨人/SAO/MHA) ===
+                { search: "紅蓮の弓矢 Linked Horizon", display: "紅蓮の弓矢 (進擊的巨人)" },
+                { search: "心臓を捧げよ Linked Horizon", display: "心臓を捧げよ! (進擊的巨人)" },
+                { search: "自由の翼 Linked Horizon", display: "自由の翼 (進擊的巨人)" },
+                { search: "unravel TK from Ling tosite sigure", display: "unravel (東京喰種)" },
+                { search: "Crossing Field LiSA", display: "crossing field (刀劍神域)" },
+                { search: "Catch the Moment LiSA", display: "Catch the Moment (刀劍神域)" },
+                { search: "IGNITE Eir Aoi", display: "IGNITE (刀劍神域)" },
+                { search: "ANIMA ReoNa", display: "ANIMA (刀劍神域)" },
+                { search: "ピースサイン 米津玄師", display: "ピースサイン (我的英雄學院)" },
+                { search: "THE DAY Porno Graffitti", display: "THE DAY (我的英雄學院)" },
+                { search: "ポラリス BLUE ENCOUNT", display: "ポラリス (我的英雄學院)" },
+                { search: "イマジネーション SPYAIR", display: "イマジネーション (排球少年!!)" },
+                { search: "FLY HIGH BURNOUT SYNDROMES", display: "FLY HIGH (排球少年!!)" },
+                { search: "ヒカリアレ BURNOUT SYNDROMES", display: "ヒカリアレ (排球少年!!)" },
+                { search: "オレンジ SPYAIR", display: "オレンジ (排球少年!!)" },
+                { search: "シルエット KANA-BOON", display: "シルエット (火影忍者疾風傳)" },
+                { search: "前前前世 RADWIMPS", display: "前前前世 (你的名字)" },
+                { search: "Sparkle RADWIMPS", display: "Sparkle (你的名字)" },
+                { search: "なんでもないや RADWIMPS", display: "なんでもないや (你的名字)" },
+                { search: "愛にできることはまだあるかい RADWIMPS", display: "愛にできることはまだあるかい (天氣之子)" },
+                { search: "Inferno Mrs. GREEN APPLE", display: "インフェルノ (炎炎消防隊)" },
+                { search: "狂乱 Hey Kids!! THE ORAL CIGARETTES", display: "狂乱 Hey Kids!! (流浪神差)" },
+                { search: "This game Konomi Suzuki", display: "This game (遊戲人生)" },
+                { search: "Redo Konomi Suzuki", display: "Redo (Re:從零開始的異世界生活)" },
+                { search: "Paradisus-Paradoxum MYTH & ROID", display: "Paradisus-Paradoxum (Re:從零開始)" },
+                { search: "fantastic dreamer Machico", display: "fantastic dreamer (為美好的世界獻上祝福!)" },
+                { search: "VORACITY MYTH & ROID", display: "VORACITY (Overlord)" },
+                { search: "Clattanoia MYTH & ROID", display: "Clattanoia (Overlord)" },
+                { search: "名前のない怪物 EGOIST", display: "名前のない怪物 (PSYCHO-PASS)" },
+                { search: "abnormalize Ling tosite sigure", display: "abnormalize (PSYCHO-PASS)" },
+                { search: "My Dearest supercell", display: "My Dearest (罪惡王冠)" },
+                { search: "The Everlasting Guilty Crown EGOIST", display: "The Everlasting Guilty Crown (罪惡王冠)" },
+                { search: "君の知らない物語 supercell", display: "君の知らない物語 (化物語)" },
+                { search: "恋愛サーキュレーション Kana Hanazawa", display: "恋愛サーキュレーション (化物語)" },
+                { search: "白金ディスコ Yuka Iguchi", display: "白金ディスコ (偽物語)" },
+                { search: "コネクト ClariS", display: "コネクト (魔法少女小圓)" },
+                { search: "Magia Kalafina", display: "Magia (魔法少女小圓)" },
+                { search: "oath sign LiSA", display: "oath sign (Fate/Zero)" },
+                { search: "Brave Shine Aimer", display: "Brave Shine (Fate/stay night)" },
+                { search: "花の唄 Aimer", display: "花の唄 (Fate/stay night HF)" },
+                { search: "only my railgun fripSide", display: "only my railgun (科學超電磁砲)" },
+                { search: "sister's noise fripSide", display: "sister's noise (科學超電磁砲)" },
+                { search: "シュガーソングとビターステップ UNISON SQUARE GARDEN", display: "シュガーソングとビターステップ (血界戰線)" },
+                { search: "オリオンをなぞる UNISON SQUARE GARDEN", display: "オリオンをなぞる (TIGER & BUNNY)" },
+                { search: "打上花火 DAOKO", display: "打上花火 (煙花)" },
+                { search: "Mukanjyo Survive Said The Prophet", display: "Mukanjyo (海盜戰記)" },
+                { search: "BLACK ROVER Survive Said The Prophet", display: "BLACK ROVER (黑色五葉草)" },
+                { search: "Black Catcher Survive Said The Prophet", display: "Black Catcher (黑色五葉草)" },
+                { search: "JUSTADICE MindaRyn", display: "JUSTADICE (關於我轉生變成史萊姆這檔事)" },
+                { search: "Snow halation μ's", display: "Snow halation (Love Live!)" },
+                { search: "僕らは今のなかで μ's", display: "僕らは今のなかで (Love Live!)" },
+
+                // === ⚔️ 2000-2009 黃金十年 (火影/死神/鋼鍊/銀魂) ===
+                { search: "ブルーバード いきものがかり", display: "ブルーバード (火影忍者疾風傳)" },
+                { search: "GO!!! FLOW", display: "GO!!! (火影忍者)" },
+                { search: "青春狂騒曲 FLOW", display: "青春狂騒曲 (火影忍者)" },
+                { search: "Sign FLOW", display: "Sign (火影忍者疾風傳)" },
+                { search: "ホタルノヒカリ いきものがかり", display: "ホタルノヒカリ (火影忍者疾風傳)" },
+                { search: "カラノココロ Anly", display: "カラノココロ (火影忍者疾風傳)" },
+                { search: "ブラッドサーキュレーター ASIAN KUNG-FU GENERATION", display: "ブラッドサーキュレーター (火影忍者疾風傳)" },
+                { search: "遥か彼方 ASIAN KUNG-FU GENERATION", display: "遥か彼方 (火影忍者)" },
+                { search: "悲しみをやさしさに little by little", display: "悲しみをやさしさに (火影忍者)" },
+                { search: "D-tecnoLife UVERworld", display: "D-tecnoLife (死神 BLEACH)" },
+                { search: "Asterisk ORANGE RANGE", display: "＊〜アスタリスク〜 (死神 BLEACH)" },
+                { search: "少女S SCANDAL", display: "少女S (死神 BLEACH)" },
+                { search: "乱舞のメロディ SID", display: "乱舞のメロディ (死神 BLEACH)" },
+                { search: "ALONES Aqua Timez", display: "ALONES (死神 BLEACH)" },
+                { search: "Velonica Aqua Timez", display: "Velonica (死神 BLEACH)" },
+                { search: "Rolling star YUI", display: "Rolling star (死神 BLEACH)" },
+                { search: "メリッサ Porno Graffitti", display: "メリッサ (鋼之鍊金術師)" },
+                { search: "READY STEADY GO L'Arc~en~Ciel", display: "READY STEADY GO (鋼之鍊金術師)" },
+                { search: "嘘 SID", display: "嘘 (鋼之鍊金術師 FA)" },
+                { search: "again YUI", display: "again (鋼之鍊金術師 FA)" },
+                { search: "ゴールデンタイムラバー Sukima Switch", display: "ゴールデンタイムラバー (鋼之鍊金術師 FA)" },
+                { search: "ホログラム NICO Touches the Walls", display: "ホログラム (鋼之鍊金術師 FA)" },
+                { search: "レイン SID", display: "レイン (鋼之鍊金術師 FA)" },
+                { search: "曇天 DOES", display: "曇天 (銀魂)" },
+                { search: "修羅 DOES", display: "修羅 (銀魂)" },
+                { search: "バクチ・ダンサー DOES", display: "バクチ・ダンサー (銀魂)" },
+                { search: "サムライハート SPYAIR", display: "サムライハート (銀魂)" },
+                { search: "現状ディストラクション SPYAIR", display: "現状ディストラクション (銀魂)" },
+                { search: "サクラミツツキ SPYAIR", display: "サクラミツツキ (銀魂)" },
+                { search: "桃源郷エイリアン serial TV drama", display: "桃源郷エイリアン (銀魂)" },
+                { search: "COLORS FLOW", display: "COLORS (反叛的魯路修)" },
+                { search: "O2 ORANGE RANGE", display: "O2 (反叛的魯路修 R2)" },
+                { search: "モザイクカケラ SunSet Swish", display: "モザイクカケラ (反叛的魯路修)" },
+                { search: "ライオン May'n", display: "ライオン (超時空要塞 Frontier)" },
+                { search: "星間飛行 Megumi Nakajima", display: "星間飛行 (超時空要塞 Frontier)" },
+                { search: "射手座☆午後九時Don't be late May'n", display: "射手座☆午後九時Don't be late (Macross F)" },
+                { search: "INVOKE T.M.Revolution", display: "INVOKE (機動戰士高達 SEED)" },
+                { search: "Meteor T.M.Revolution", display: "Meteor (機動戰士高達 SEED)" },
+                { search: "ignited T.M.Revolution", display: "ignited (機動戰士高達 SEED DESTINY)" },
+                { search: "DAYBREAK'S BELL L'Arc~en~Ciel", display: "DAYBREAK'S BELL (高達 00)" },
+                { search: "儚くも永久のカナシ UVERworld", display: "儚くも永久のカナシ (高達 00)" },
+                { search: "God knows... 平野綾", display: "God knows... (涼宮春日的憂鬱)" },
+                { search: "ハレ晴レユカイ 平野綾", display: "ハレ晴レユカイ (涼宮春日的憂鬱)" },
+                { search: "創聖のアクエリオン AKINO", display: "創聖のアクエリオン (創聖大天使)" },
+                { search: "心絵 TRIPLANE", display: "心絵 (棒球大聯盟)" },
+                { search: "Snow fairy FUNKIST", display: "Snow fairy (魔導少年)" },
+
+                // === 💎 1980-1999 經典神作 (EVA/龍珠/男兒當入樽/數碼暴龍) ===
+                { search: "残酷な天使のテーゼ 高橋洋子", display: "殘酷天使的行動綱領 (新世紀福音戰士)" },
+                { search: "魂のルフラン 高橋洋子", display: "魂のルフラン (新世紀福音戰士)" },
+                { search: "世界が終るまでは WANDS", display: "直到世界盡頭… (男兒當入樽)" },
+                { search: "君が好きだと叫びたい BAAD", display: "好想大聲叫喜歡你 (男兒當入樽)" },
+                { search: "あなただけ見つめてる 大黒摩季", display: "あなただけ見つめてる (男兒當入樽)" },
+                { search: "マイ フレンド ZARD", display: "マイ フレンド (男兒當入樽)" },
+                { search: "Cha-La Head-Cha-La Kageyama", display: "CHA-LA HEAD-CHA-LA (龍珠 Z)" },
+                { search: "WE GOTTA POWER Kageyama", display: "WE GOTTA POWER (龍珠 Z)" },
+                { search: "DAN DAN 心魅かれてく FIELD OF VIEW", display: "DAN DAN 心魅かれてく (龍珠 GT)" },
+                { search: "Butter-Fly Wada Kouji", display: "Butter-Fly (數碼暴龍)" },
+                { search: "Brave Heart 宮崎歩", display: "Brave Heart (數碼暴龍)" },
+                { search: "target~赤い衝撃~ Wada Kouji", display: "ターゲット～赤い衝撃～ (數碼暴龍 02)" },
+                { search: "めざせポケモンマスター Rica Matsumoto", display: "めざせポケモンマスター (寵物小精靈)" },
+                { search: "1・2・3 Rica Matsumoto", display: "1・2・3 (寵物小精靈)" },
+                { search: "We Are! Hiroshi Kitadani", display: "We Are! (海賊王)" },
+                { search: "Believe Folder 5", display: "Believe (海賊王)" },
+                { search: "そばかす JUDY AND MARY", display: "そばかす (浪客劍心)" },
+                { search: "1/3の純情な感情 SIAM SHADE", display: "1/3の純情な感情 (浪客劍心)" },
+                { search: "HEART OF SWORD T.M.Revolution", display: "HEART OF SWORD (浪客劍心)" },
+                { search: "1/2 Makoto Kawamoto", display: "1/2 (浪客劍心)" },
+                { search: "微笑みの爆弾 Matsuko Mawatari", display: "微笑みの爆弾 (幽遊白書)" },
+                { search: "アンバランスなKissをして Hiro Takahashi", display: "アンバランスなKissをして (幽遊白書)" },
+                { search: "Get Wild TM NETWORK", display: "Get Wild (城市獵人)" },
+                { search: "ペガサス幻想 MAKE-UP", display: "天馬座的幻想 (聖鬥士星矢)" },
+                { search: "ムーンライト伝説 DALI", display: "ムーンライト伝説 (美少女戰士)" },
+                { search: "おジャ魔女カーニバル!! MAHO堂", display: "おジャ魔女カーニバル!! (小魔女DoReMi)" },
+                { search: "プラチナ Maaya Sakamoto", display: "プラチナ (百變小櫻)" },
+                { search: "Catch You Catch Me Gumi", display: "Catch You Catch Me (百變小櫻)" },
+                { search: "謎 Miho Komatsu", display: "謎 (名偵探柯南)" },
+                { search: "ギリギリchop B'z", display: "ギリギリchop (名偵探柯南)" },
+                { search: "secret of my heart Mai Kuraki", display: "Secret of my heart (名偵探柯南)" },
+                { search: "おはよう。 Keno", display: "おはよう。 (全職獵人 1999)" },
+                { search: "departure! Masatoshi Ono", display: "departure! (全職獵人 2011)" },
+                { search: "HUNTING FOR YOUR DREAM GALNERYUS", display: "HUNTING FOR YOUR DREAM (全職獵人 2011)" },
+                { search: "REASON YUZU", display: "REASON (全職獵人 2011)" },
+                { search: "Driver's High L'Arc~en~Ciel", display: "Driver's High (GTO)" },
+                { search: "哀 戦士 Inoue Daisuke", display: "哀 戦士 (機動戰士高達)" },
+                { search: "水の星へ愛をこめて Hiroko Moriguchi", display: "水の星へ愛をこめて (機動戰士 Z 高達)" },
+                { search: "SOUVENIR BUMP OF CHICKEN", display: "SOUVENIR (SPY×FAMILY)" },
+                { search: "色彩 yama", display: "色彩 (SPY×FAMILY)" },
+                { search: "クラクラ Ado", display: "クラクラ (SPY×FAMILY)" },
+                { search: "絆ノ奇跡 MAN WITH A MISSION milet", display: "絆ノ奇跡 (鬼滅之刃)" },
+                { search: "コイコガレ milet MAN WITH A MISSION", display: "コイコガレ (鬼滅之刃)" },
+                { search: "夢幻 MY FIRST STORY", display: "夢幻 (鬼滅之刃)" },
+                { search: "永久 -トコシエ- HYDE", display: "永久 -トコシエ- (鬼滅之刃)" },
+                { search: "朝が来る Aimer", display: "朝が来る (鬼滅之刃)" },
+                { search: "白銀 LiSA", display: "白銀 (鬼滅之刃)" },
+                { search: "明け星 LiSA", display: "明け星 (鬼滅之刃)" },
+                { search: "Under the Tree SiM", display: "Under the Tree (進擊的巨人)" },
+                { search: "二千年... 若しくは... 二万年後の君へ Linked Horizon", display: "二千年... 若しくは... 二万年後の君へ (進擊的巨人)" },
+                { search: "最後の巨人 Linked Horizon", display: "最後の巨人 (進擊的巨人)" },
+                { search: "すずめ RADWIMPS", display: "すずめ (鈴芽之旅)" },
+                { search: "カナタハルカ RADWIMPS", display: "カナタハルカ (鈴芽之旅)" },
+                { search: "タイムパラドックス Vaundy", display: "タイムパラドックス (哆啦A夢電影)" },
+                { search: "裸の勇者 Vaundy", display: "裸の勇者 (國王排名)" },
+                { search: "BOY King Gnu", display: "BOY (國王排名)" },
+                { search: "Oz. yama", display: "Oz. (國王排名)" },
+                { search: "錠剤 TOOBOE", display: "錠剤 (鏈鋸人)" },
+                { search: "残機 ZUTOMAYO", display: "残機 (鏈鋸人)" },
+                { search: "ファーストデス TK from Ling tosite sigure", display: "ファーストデス (鏈鋸人)" },
+                { search: "刃渡り2億センチ Maximum the Hormone", display: "刃渡り2億センチ (鏈鋸人)" },
+                { search: "インザバックルーム syudou", display: "インザバックルーム (鏈鋸人)" },
+                { search: "大脳的なランデブー Kanaria", display: "大脳的なランデブー (鏈鋸人)" },
+                { search: "バイオレンス 女王蜂", display: "バイオレンス (鏈鋸人)" },
+                { search: "Deep down Aimer", display: "Deep down (鏈鋸人)" },
+                { search: "ファイトソング Eve", display: "ファイトソング (鏈鋸人)" },
+                { search: "ちゅ、多様性。 ano", display: "ちゅ、多様性。 (鏈鋸人)" },
+                { search: "なにが悪い 結束バンド", display: "なにが悪い (孤獨搖滾!)" },
+                { search: "カラカラ 結束バンド", display: "カラカラ (孤獨搖滾!)" },
+                { search: "忘れてやらない 結束バンド", display: "忘れてやらない (孤獨搖滾!)" },
+                { search: "Red:birthmark Aina The End", display: "Red:birthmark (機動戰士高達 水星的魔女)" },
+                { search: "君よ 気高くあれ シユイ", display: "君よ 気高くあれ (機動戰士高達 水星的魔女)" },
+                { search: "閃光 Alexandros", display: "閃光 (機動戰士高達 閃光的哈薩威)" },
+                { search: "Cry Baby Official髭男dism", display: "Cry Baby (東京復仇者)" },
+                { search: "ホワイトノイズ Official髭男dism", display: "ホワイトノイズ (東京復仇者)" },
+                { search: "トーキョーワンダー。 泣き虫", display: "トーキョーワンダー。 (東京復仇者)" },
+                { search: "アカリ 崎山蒼志", display: "アカリ (咒術迴戰)" },
+                { search: "give it back Cö shu Nie", display: "give it back (咒術迴戰)" },
+                { search: "Knock Out 岡崎体育", display: "Knock Out (肌肉魔法使)" },
+                { search: "絶絶絶絶対聖域 ano", display: "絶絶絶絶対聖域 (惡魔的破壞)" },
+                { search: "ゼロステップ DOTAMA", display: "ゼロステップ (黑子的籃球)" },
+                { search: "No.1 DISH//", display: "No.1 (我的英雄學院)" },
+                { search: "ひたむき 崎山蒼志", display: "ひたむき (我的英雄學院)" },
+                { search: "ぼくらの Eve", display: "ぼくらの (我的英雄學院)" },
+                { search: "トナリワウ PEOPLE 1", display: "トナリワウ (國王排名)" },
+                { search: "燦々デイズ Spira Spica", display: "燦々デイズ (戀上換裝娃娃)" },
+                { search: "恋ノ行方 Akari Akase", display: "恋ノ行方 (戀上換裝娃娃)" },
+                { search: "ダーリン 須田景凪", display: "ダーリン (躍動青春)" },
+                { search: "メロウ 須田景凪", display: "メロウ (躍動青春)" },
+
+                // === 🔥 2010-2019 黃金殿堂補充包 ===
+                { search: "INNOCENCE Eir Aoi", display: "INNOCENCE (刀劍神域)" },
+                { search: "courage Haruka Tomatsu", display: "courage (刀劍神域)" },
+                { search: "流星 Eir Aoi", display: "流星 (刀劍神域外傳 GGO)" },
+                { search: "RESISTER ASCA", display: "RESISTER (刀劍神域)" },
+                { search: "シルシ LiSA", display: "シルシ (刀劍神域)" },
+                { search: "ADAMAS LiSA", display: "ADAMAS (刀劍神域)" },
+                { search: "アイヲウタエ 春奈るな", display: "アイヲウタエ (物語系列)" },
+                { search: "staple stable 斎藤千和", display: "staple stable (化物語)" },
+                { search: "marshmallow justice 喜多村英梨", display: "marshmallow justice (偽物語)" },
+                { search: "perfect slumbers 堀江由衣", display: "perfect slumbers (貓物語)" },
+                { search: "mathemagics 井上麻里奈", display: "mathemagics (終物語)" },
+                { search: "空に歌えば amazarashi", display: "空に歌えば (我的英雄學院)" },
+                { search: "ODD FUTURE UVERworld", display: "ODD FUTURE (我的英雄學院)" },
+                { search: "Make my story Lenny code fiction", display: "Make my story (我的英雄學院)" },
+                { search: "Merry-Go-Round MAN WITH A MISSION", display: "Merry-Go-Round (我的英雄學院)" },
+                { search: "スターマーカー KANA-BOON", display: "スターマーカー (我的英雄學院)" },
+                { search: "Ah Yeah!! Sukima Switch", display: "Ah Yeah!! (排球少年!!)" },
+                { search: "アイム・ア・ビリーバー SPYAIR", display: "アイム・ア・ビリーバー (排球少年!!)" },
+                { search: "天地ガエシ NICO Touches the Walls", display: "天地ガエシ (排球少年!!)" },
+                { search: "決戦スピリット CHiCO with HoneyWorks", display: "決戦スピリット (排球少年!!)" },
+                { search: "ダイバー KANA-BOON", display: "ダイバー (火影忍者疾風傳)" },
+                { search: "LINE Sukima Switch", display: "LINE (火影忍者疾風傳)" },
+                { search: "ニワカ雨ニモ負ケズ NICO Touches the Walls", display: "ニワカ雨ニモ負ケズ (火影忍者疾風傳)" },
+                { search: "月の大きさ 乃木坂46", display: "月の大きさ (火影忍者疾風傳)" },
+                { search: "突撃ロック THE CRO-MAGNONS", display: "突撃ロック (火影忍者疾風傳)" },
+                { search: "HARUKAZE SCANDAL", display: "HARUKAZE (死神 BLEACH)" },
+                { search: "chAngE miwa", display: "chAngE (死神 BLEACH)" },
+                { search: "BLUE ViViD", display: "BLUE (死神 BLEACH)" },
+                { search: "Period CHEMISTRY", display: "Period (鋼之鍊金術師 FA)" },
+                { search: "瞬間センチメンタル SCANDAL", display: "瞬間センチメンタル (鋼之鍊金術師 FA)" },
+                { search: "RAY OF LIGHT 中川翔子", display: "RAY OF LIGHT (鋼之鍊金術師 FA)" },
+                { search: "KNOW KNOW KNOW DOES", display: "KNOW KNOW KNOW (銀魂)" },
+                { search: "I Wanna Be... SPYAIR", display: "I Wanna Be... (銀魂)" },
+                { search: "プライド革命 CHiCO with HoneyWorks", display: "プライド革命 (銀魂)" },
+                { search: "ideal white 綾野ましろ", display: "ideal white (Fate/stay night UBW)" },
+                { search: "to the beginning Kalafina", display: "to the beginning (Fate/Zero)" },
+                { search: "I beg you Aimer", display: "I beg you (Fate/stay night HF)" },
+                { search: "春はゆく Aimer", display: "春はゆく (Fate/stay night HF)" },
+                { search: "LAST STARDUST Aimer", display: "LAST STARDUST (Fate/stay night UBW)" },
+                { search: "ASH LiSA", display: "ASH (Fate/Apocrypha)" },
+                { search: "いけないボーダーライン ワルキューレ", display: "いけないボーダーライン (超時空要塞 Delta)" },
+                { search: "一度だけの恋なら ワルキューレ", display: "一度だけの恋なら (超時空要塞 Delta)" },
+                { search: "ルンがピカッと光ったら 鈴木みのり", display: "ルンがピカッと光ったら (超時空要塞 Delta)" },
+                { search: "There is a reason Konomi Suzuki", display: "There is a reason (遊戲人生Zero)" },
+                { search: "オラシオン 茅野愛衣", display: "オラシオン (遊戲人生)" },
+                { search: "GO CRY GO OxT", display: "GO CRY GO (Overlord)" },
+                { search: "HOLLOW HUNGER OxT", display: "HOLLOW HUNGER (Overlord)" },
+                { search: "L.L.L. MYTH & ROID", display: "L.L.L. (Overlord)" },
+                { search: "STYX HELIX MYTH & ROID", display: "STYX HELIX (Re:從零開始的異世界生活)" },
+                { search: "Realize Konomi Suzuki", display: "Realize (Re:從零開始的異世界生活)" },
+                { search: "Memento nonoc", display: "Memento (Re:從零開始的異世界生活)" },
+                { search: "TOMORROW Machico", display: "TOMORROW (為美好的世界獻上祝福!)" },
+                { search: "ちいさな冒険者 雨宮天", display: "ちいさな冒険者 (為美好的世界獻上祝福!)" },
+                { search: "ジョジョ〜その血の運命〜 富永TOMMY弘明", display: "JoJo〜その血の運命〜 (JoJo的奇妙冒險)" },
+                { search: "BLOODY STREAM Coda", display: "BLOODY STREAM (JoJo的奇妙冒險)" },
+                { search: "STAND PROUD 橋本仁", display: "STAND PROUD (JoJo的奇妙冒險)" },
+                { search: "Crazy Noisy Bizarre Town THE DU", display: "Crazy Noisy Bizarre Town (JoJo的奇妙冒險)" },
+                { search: "Great Days 青木カレン", display: "Great Days (JoJo的奇妙冒險)" },
+                { search: "Fighting Gold Coda", display: "Fighting Gold (JoJo的奇妙冒險)" },
+                { search: "竈門炭治郎のうた 椎名豪", display: "竈門炭治郎のうた (鬼滅之刃)" },
+                { search: "光るなら Goose house", display: "光るなら (四月是你的謊言)" },
+                { search: "七色シンフォニー コアラモード", display: "七色シンフォニー (四月是你的謊言)" },
+                { search: "Hello,world! BUMP OF CHICKEN", display: "Hello,world! (血界戰線)" },
+                { search: "fake town baby UNISON SQUARE GARDEN", display: "fake town baby (血界戰線)" },
+                { search: "午夜の待ち合わせ Hello Sleepwalkers", display: "午夜の待ち合わせ (流浪神差)" },
+                { search: "Sincerely TRUE", display: "Sincerely (紫羅蘭永恆花園)" },
+                { search: "みちしるべ 茅原実里", display: "みちしるべ (紫羅蘭永恆花園)" },
+                { search: "君のせい the peggies", display: "君のせい (青春豬頭少年)" },
+                { search: "ラブ・ドラマティック Masayuki Suzuki", display: "ラブ・ドラマティック (輝夜姬想讓人告白)" },
+
+                // === ⚔️ 2000-2009 黃金十年補充包 ===
+                { search: "解読不能 ジン", display: "解読不能 (反叛的魯路修)" },
+                { search: "瞳ノ翼 access", display: "瞳ノ翼 (反叛的魯路修)" },
+                { search: "WORLD END FLOW", display: "WORLD END (反叛的魯路修 R2)" },
+                { search: "シアワセネイロ ORANGE RANGE", display: "シアワセネイロ (反叛的魯路修 R2)" },
+                { search: "あんなに一緒だったのに See-Saw", display: "あんなに一緒だったのに (機動戰士高達 SEED)" },
+                { search: "暁の車 FictionJunction YUUKA", display: "暁の車 (機動戰士高達 SEED)" },
+                { search: "Reason Nami Tamaki", display: "Reason (機動戰士高達 SEED DESTINY)" },
+                { search: "僕たちの行方 高橋瞳", display: "僕たちの行方 (機動戰士高達 SEED DESTINY)" },
+                { search: "PRIDE HIGH and MIGHTY COLOR", display: "PRIDE (機動戰士高達 SEED DESTINY)" },
+                { search: "君は僕に似ている See-Saw", display: "君は僕に似ている (機動戰士高達 SEED DESTINY)" },
+                { search: "Ash Like Snow the brilliant green", display: "Ash Like Snow (機動戰士高達 00)" },
+                { search: "罠 THE BACK HORN", display: "罠 (機動戰士高達 00)" },
+                { search: "trust you 伊藤由奈", display: "trust you (機動戰士高達 00)" },
+                { search: "涙のムコウ ステレオポニー", display: "涙のムコウ (機動戰士高達 00)" },
+                { search: "トライアングラー 坂本真綾", display: "トライアングラー (Macross Frontier)" },
+                { search: "ノーザンクロス May'n", display: "ノーザンクロス (Macross Frontier)" },
+                { search: "冒険でしょでしょ? 平野綾", display: "冒険でしょでしょ? (涼宮春日的憂鬱)" },
+                { search: "Cagayake!GIRLS 放課後ティータイム", display: "Cagayake!GIRLS (K-ON!)" },
+                { search: "Don't say lazy 放課後ティータイム", display: "Don't say \"lazy\" (K-ON!)" },
+                { search: "GO! GO! MANIAC 放課後ティータイム", display: "GO! GO! MANIAC (K-ON!!)" },
+                { search: "Listen!! 放課後ティータイム", display: "Listen!! (K-ON!!)" },
+                { search: "U&I 放課後ティータイム", display: "U&I (K-ON!!)" },
+                { search: "NO,Thank You! 放課後ティータイム", display: "NO,Thank You! (K-ON!!)" },
+                { search: "ふわふわ時間 放課後ティータイム", display: "ふわふわ時間 (K-ON!)" },
+                { search: "LEVEL5-judgelight- fripSide", display: "LEVEL5-judgelight- (科學超電磁砲)" },
+                { search: "PSI-missing 川田まみ", display: "PSI-missing (魔法禁書目錄)" },
+                { search: "masterpiece 川田まみ", display: "masterpiece (魔法禁書目錄)" },
+                { search: "緋色の空 川田まみ", display: "緋色の空 (灼眼的夏娜)" },
+                { search: "JOINT 川田まみ", display: "JOINT (灼眼的夏娜)" },
+                { search: "Light My Fire KOTOKO", display: "Light My Fire (灼眼的夏娜)" },
+                { search: "First kiss ICHIKO", display: "First kiss (零之使魔)" },
+                { search: "プレパレード 釘宮理恵", display: "プレパレード (龍與虎)" },
+                { search: "silky heart 堀江由衣", display: "silky heart (龍與虎)" },
+                { search: "メグメル eufonius", display: "メグメル (CLANNAD)" },
+                { search: "時を刻む唄 Lia", display: "時を刻む唄 (CLANNAD 〜AFTER STORY〜)" },
+                { search: "My Soul, Your Beats! Lia", display: "My Soul, Your Beats! (Angel Beats!)" },
+                { search: "一番の宝物 LiSA", display: "一番の宝物 (Angel Beats!)" },
+                { search: "ひぐらしのなく頃に 島みやえい子", display: "ひぐらしのなく頃に (寒蟬鳴泣之時)" },
+                { search: "奈落の花 島みやえい子", display: "奈落の花 (寒蟬鳴泣之時)" },
+                { search: "禁じられた遊び ALI PROJECT", display: "禁じられた遊び (薔薇少女)" },
+                { search: "ROCKS HOUND DOG", display: "ROCKS (火影忍者)" },
+                { search: "流星 TiA", display: "流星 (火影忍者)" },
+                { search: "ゆらゆら Hearts Grow", display: "ゆらゆら (火影忍者)" },
+                { search: "波風サテライト シュノーケル", display: "波風サテライト (火影忍者)" },
+                { search: "Re:member FLOW", display: "Re:member (火影忍者)" },
+                { search: "ピノキオ オレスカバンド", display: "ピノキオ (火影忍者)" },
+                { search: "ほうき星 ユンナ", display: "ほうき星 (死神 BLEACH)" },
+                { search: "HANABI いきものがかり", display: "HANABI (死神 BLEACH)" },
+                { search: "CHU-BURA Kelun", display: "CHU-BURA (死神 BLEACH)" },
+                { search: "アフターダーク ASIAN KUNG-FU GENERATION", display: "アフターダーク (死神 BLEACH)" },
+                { search: "Share The World 東方神起", display: "Share The World (海賊王)" },
+                { search: "ヒカリへ ザ・ベイビースターズ", display: "ヒカリへ (海賊王)" },
+                { search: "BON VOYAGE! Bon-Bon Blanco", display: "BON VOYAGE! (海賊王)" },
+                { search: "ココロのちず BOYSTYLE", display: "ココロのちず (海賊王)" },
+                { search: "BRAND NEW WORLD D-51", display: "BRAND NEW WORLD (海賊王)" },
+                { search: "The Biggest Dreamer 和田光司", display: "The Biggest Dreamer (數碼暴龍 3)" },
+                { search: "FIRE!! 和田光司", display: "FIRE!! (數碼暴龍 4)" },
+                { search: "CHANGE THE WORLD V6", display: "CHANGE THE WORLD (犬夜叉)" },
+                { search: "深い森 Do As Infinity", display: "深い森 (犬夜叉)" },
+                { search: "Dearest 浜崎あゆみ", display: "Dearest (犬夜叉)" },
+                { search: "Every Heart-ミンナノキモチ- BoA", display: "Every Heart-ミンナノキモチ- (犬夜叉)" },
+                { search: "Grip! Every Little Thing", display: "Grip! (犬夜叉)" },
+                { search: "イタズラなKISS day after tomorrow", display: "イタズラなKISS (犬夜叉)" },
+                { search: "One Day, One Dream タッキー&翼", display: "One Day, One Dream (犬夜叉)" },
+
+                // === 💎 1980-1999 經典神作補充包 ===
+                { search: "Over Soul 林原めぐみ", display: "Over Soul (通靈王)" },
+                { search: "Northern lights 林原めぐみ", display: "Northern lights (通靈王)" },
+                { search: "アルミナ ナイトメア", display: "アルミナ (死亡筆記)" },
+                { search: "the WORLD ナイトメア", display: "the WORLD (死亡筆記)" },
+                { search: "絶望ビリー マキシマム ザ ホルモン", display: "絶望ビリー (死亡筆記)" },
+                { search: "What's up, people?! マキシマム ザ ホルモン", display: "What's up, people?! (死亡筆記)" },
+                { search: "激動 UVERworld", display: "激動 (驅魔少年)" },
+                { search: "INNOCENT SORROW abingdon boys school", display: "INNOCENT SORROW (驅魔少年)" },
+                { search: "Snow Kiss NIRGILIS", display: "Snow Kiss (驅魔少年)" },
+                { search: "BOYS & GIRLS LM.C", display: "BOYS & GIRLS (家庭教師HITMAN REBORN!)" },
+                { search: "DIVE TO WORLD CHERRYBLOSSOM", display: "DIVE TO WORLD (家庭教師)" },
+                { search: "88 LM.C", display: "88 (家庭教師)" },
+                { search: "EASY GO 加藤和樹", display: "EASY GO (家庭教師)" },
+                { search: "resonance T.M.Revolution", display: "resonance (噬魂者)" },
+                { search: "PAPERMOON Tommy heavenly6", display: "PAPERMOON (噬魂者)" },
+                { search: "DAYS FLOW", display: "DAYS (交響詩篇)" },
+                { search: "少年ハート HOME MADE 家族", display: "少年ハート (交響詩篇)" },
+                { search: "sakura NIRGILIS", display: "sakura (交響詩篇)" },
+                { search: "SHIVER the GazettE", display: "SHIVER (黑執事)" },
+                { search: "モノクロのキス シド", display: "モノクロのキス (黑執事)" },
+                { search: "ENAMEL シド", display: "ENAMEL (黑執事)" },
+                { search: "摩訶不思議アドベンチャー! 高橋洋樹", display: "摩訶不思議アドベンチャー! (龍珠)" },
+                { search: "ロマンティックあげるよ 橋本潮", display: "ロマンティックあげるよ (龍珠)" },
+                { search: "ぜったいに 誰も ZYYG", display: "ぜったいに 誰も (男兒當入樽)" },
+                { search: "煌めく瞬間に捕われて MANISH", display: "煌めく瞬間に捕われて (男兒當入樽)" },
+                { search: "乙女のポリシー 石田燿子", display: "乙女のポリシー (美少女戰士)" },
+                { search: "セーラースターソング 花沢加絵", display: "セーラースターソング (美少女戰士)" },
+                { search: "ライバル! 松本梨香", display: "ライバル! (寵物小精靈)" },
+                { search: "OK! 松本梨香", display: "OK! (寵物小精靈)" },
+                { search: "タイプ:ワイルド 松本梨香", display: "タイプ:ワイルド (寵物小精靈)" },
+                { search: "君がいない夏 DEEN", display: "君がいない夏 (名偵探柯南)" },
+                { search: "運命のルーレット廻して ZARD", display: "運命のルーレット廻して (名偵探柯南)" },
+                { search: "恋はスリル、ショック、サスペンス 愛内里菜", display: "恋はスリル、ショック、サスペンス (名偵探柯南)" },
+                { search: "風のららら 倉木麻衣", display: "風のららら (名偵探柯南)" },
+                { search: "It's gonna rain! BONNIE PINK", display: "It's gonna rain! (浪客劍心)" },
+                { search: "涙は知っている 涼風真世", display: "涙は知っている (浪客劍心)" },
+                { search: "ダメ! 和泉容", display: "ダメ! (浪客劍心)" },
+                { search: "太陽がまた輝くとき 高橋ひろ", display: "太陽がまた輝くとき (幽遊白書)" },
+                { search: "さよならbyebye 馬渡松子", display: "さよならbyebye (幽遊白書)" },
+                { search: "デイドリームジェネレーション 馬渡松子", display: "デイドリームジェネレーション (幽遊白書)" },
+                { search: "Super Girl 岡村靖幸", display: "Super Girl (城市獵人)" },
+                { search: "STILL LOVE HER TM NETWORK", display: "STILL LOVE HER (城市獵人)" },
+                { search: "SARA FENCE OF DEFENSE", display: "SARA (城市獵人)" },
+                { search: "FLY ME TO THE MOON CLAIRE", display: "FLY ME TO THE MOON (新世紀福音戰士)" },
+                { search: "愛・おぼえていますか 飯島真理", display: "愛・おぼえていますか (超時空要塞)" },
+                { search: "私の彼はパイロット 飯島真理", display: "私の彼はパイロット (超時空要塞)" },
+                { search: "BEYOND THE TIME TM NETWORK", display: "BEYOND THE TIME (機動戰士高達 逆襲的夏亞)" },
+                { search: "JUST COMMUNICATION TWO-MIX", display: "JUST COMMUNICATION (新機動戰記高達W)" },
+                { search: "RHYTHM EMOTION TWO-MIX", display: "RHYTHM EMOTION (新機動戰記高達W)" },
+                { search: "WHITE REFLECTION TWO-MIX", display: "WHITE REFLECTION (新機動戰記高達W)" },
+                { search: "タッチ 岩崎良美", display: "タッチ (棒球英豪 Touch)" },
+                { search: "Give a reason 林原めぐみ", display: "Give a reason (秀逗魔導士)" },
+                { search: "Get along 林原めぐみ", display: "Get along (秀逗魔導士)" },
+                { search: "YOU GET TO BURNING 松澤由美", display: "YOU GET TO BURNING (機動戰艦)" },
+                { search: "ゆずれない願い 田村直美", display: "ゆずれない願い (魔法騎士)" },
+                { search: "いとおしい人のために 佐藤朱美", display: "いとおしい人のために (不思議遊戲)" },
+                { search: "扉をあけて ANZA", display: "扉をあけて (百變小櫻)" },
+                { search: "Groovy! 広瀬香美", display: "Groovy! (百變小櫻)" },
+                { search: "おジャ魔女はココにいる MAHO堂", display: "おジャ魔女はココにいる (小魔女DoReMi)" },
+                { search: "おどるポンポコリン B.B.クィーンズ", display: "おどるポンポコリン (櫻桃小丸子)" }
+            ]
+        },
+        jpop00: {
+            country: "jp", themeColor: "#00d2ff", styleClass: "color-jpop", minYear: 2000, maxYear: 2009,
+            artists: [
+                { search: "Utada Hikaru", display: "宇多田光" }, { search: "Ayumi Hamasaki", display: "濱崎步" },
+                { search: "Namie Amuro", display: "安室奈美惠" }, { search: "Arashi", display: "嵐 (Arashi)" },
+                { search: "YUI", display: "YUI" }, { search: "Otsuka Ai", display: "大塚愛" },
+                { search: "Mika Nakashima", display: "中島美嘉" }, { search: "ORANGE RANGE", display: "橘子新樂園" }
+            ]
+        },
+        jpop10: {
+            country: "jp", themeColor: "#00d2ff", styleClass: "color-jpop", minYear: 2010, maxYear: 2019,
+            artists: [
+                { search: "Kenshi Yonezu", display: "米津玄師" }, { search: "Gen Hoshino", display: "星野源" },
+                { search: "ONE OK ROCK", display: "ONE OK ROCK" }, { search: "Perfume", display: "Perfume" },
+                { search: "Radwimps", display: "RADWIMPS" }, { search: "Sekai no Owari", display: "SEKAI NO OWARI" },
+                { search: "Kana Nishino", display: "西野加奈" }, { search: "AKB48", display: "AKB48" },
+                { search: "Utada Hikaru", display: "宇多田光" }, { search: "Namie Amuro", display: "安室奈美惠" }
+            ]
+        },
+        jpop20: {
+            country: "jp", themeColor: "#00d2ff", styleClass: "color-jpop", minYear: 2020, maxYear: 2026,
+            artists: [
+                { search: "YOASOBI", display: "YOASOBI" }, { search: "Ado", display: "Ado" },
+                { search: "Vaundy", display: "Vaundy" }, { search: "Fujii Kaze", display: "藤井風" },
+                { search: "Yuuri", display: "優里" }, { search: "Official Hige Dandism", display: "Official髭男dism" },
+                { search: "King Gnu", display: "King Gnu" }, { search: "Mrs. GREEN APPLE", display: "Mrs. GREEN APPLE" },
+                { search: "TUKI.", display: "TUKI." }, { search: "Kenshi Yonezu", display: "米津玄師" }
+            ]
+        },
+        canto80: {
+            country: "hk", themeColor: "#ffb703", styleClass: "color-canto", minYear: 1980, maxYear: 1989,
+            artists: [
+                { search: "張國榮", display: "張國榮" }, { search: "譚詠麟", display: "譚詠麟" },
+                { search: "梅艷芳", display: "梅艷芳" }, { search: "陳百強", display: "陳百強" },
+                { search: "林子祥", display: "林子祥" }, { search: "羅文", display: "羅文" },
+                { search: "甄妮", display: "甄妮" }, { search: "徐小鳳", display: "徐小鳳" }, { search: "Beyond", display: "Beyond" }
+            ]
+        },
+        canto90: {
+            country: "hk", themeColor: "#ffb703", styleClass: "color-canto", minYear: 1990, maxYear: 1999,
+            artists: [
+                { search: "張學友", display: "張學友" }, { search: "劉德華", display: "劉德華" },
+                { search: "黎明", display: "黎明" }, { search: "郭富城", display: "郭富城" },
+                { search: "王菲", display: "王菲" }, { search: "鄭秀文", display: "鄭秀文" },
+                { search: "李克勤", display: "李克勤" }, { search: "Beyond", display: "Beyond" }, { search: "草蜢", display: "草蜢" },
+                { search: "陳奕迅", display: "陳奕迅" }
+            ]
+        },
+        canto00: {
+            country: "hk", themeColor: "#ffb703", styleClass: "color-canto", minYear: 2000, maxYear: 2009,
+            artists: [
+                { search: "陳奕迅", display: "陳奕迅" }, { search: "容祖兒", display: "容祖兒" },
+                { search: "古巨基", display: "古巨基" }, { search: "楊千嬅", display: "楊千嬅" },
+                { search: "Twins", display: "Twins" }, { search: "謝霆鋒", display: "謝霆鋒" },
+                { search: "張敬軒", display: "張敬軒" }, { search: "衛蘭", display: "衛蘭" }, { search: "側田", display: "側田" },
+                { search: "鄭秀文", display: "鄭秀文" }, { search: "李克勤", display: "李克勤" }
+            ]
+        },
+        canto10: {
+            country: "hk", themeColor: "#ffb703", styleClass: "color-canto", minYear: 2010, maxYear: 2019,
+            artists: [
+                { search: "陳奕迅", display: "陳奕迅" }, { search: "張敬軒", display: "張敬軒" },
+                { search: "周柏豪", display: "周柏豪" }, { search: "C AllStar", display: "C AllStar" },
+                { search: "Dear Jane", display: "Dear Jane" }, { search: "Supper Moment", display: "Supper Moment" },
+                { search: "AGA", display: "AGA" }, { search: "Gin Lee", display: "Gin Lee" }, { search: "容祖兒", display: "容祖兒" }
+            ]
+        },
+        canto20: {
+            country: "hk", themeColor: "#ffb703", styleClass: "color-canto", minYear: 2020, maxYear: 2026,
+            artists: [
+                { search: "林家謙", display: "林家謙" }, { search: "MC 張天賦", display: "MC 張天賦" },
+                { search: "洪嘉豪", display: "洪嘉豪" }, { search: "陳蕾", display: "陳蕾" },
+                { search: "Gareth.T", display: "Gareth.T" }, { search: "Dear Jane", display: "Dear Jane" },
+                { search: "Tyson Yoshi", display: "Tyson Yoshi" }, { search: "Serrini", display: "Serrini" }, { search: "COLLAR", display: "COLLAR" },
+                { search: "張敬軒", display: "張敬軒" }
+            ]
+        },
+        tw00: {
+            country: "tw", themeColor: "#ff9800", styleClass: "color-tw", minYear: 2000, maxYear: 2009,
+            artists: [
+                { search: "周杰倫", display: "周杰倫" }, { search: "五月天", display: "五月天" },
+                { search: "S.H.E", display: "S.H.E" }, { search: "蔡依林", display: "蔡依林" },
+                { search: "孫燕姿", display: "孫燕姿" }, { search: "林俊傑", display: "林俊傑" },
+                { search: "王力宏", display: "王力宏" }, { search: "梁靜茹", display: "梁靜茹" },
+                { search: "王心凌", display: "王心凌" }, { search: "張韶涵", display: "張韶涵" }
+            ]
+        },
+        tw10: {
+            country: "tw", themeColor: "#ff9800", styleClass: "color-tw", minYear: 2010, maxYear: 2019,
+            artists: [
+                { search: "林宥嘉", display: "林宥嘉" }, { search: "田馥甄", display: "田馥甄 (Hebe)" },
+                { search: "蕭敬騰", display: "蕭敬騰" }, { search: "徐佳瑩", display: "徐佳瑩" },
+                { search: "韋禮安", display: "韋禮安" }, { search: "A-Lin", display: "A-Lin" },
+                { search: "八三夭", display: "八三夭" }, { search: "茄子蛋", display: "茄子蛋" },
+                { search: "周興哲", display: "周興哲" }, { search: "周杰倫", display: "周杰倫" }, { search: "五月天", display: "五月天" },
+                { search: "林俊傑", display: "林俊傑" }
+            ]
+        },
+        tw20: {
+            country: "tw", themeColor: "#ff9800", styleClass: "color-tw", minYear: 2020, maxYear: 2026,
+            artists: [
+                { search: "告五人", display: "告五人" }, { search: "理想混蛋", display: "理想混蛋" },
+                { search: "高爾宣", display: "高爾宣 OSN" }, { search: "婁峻碩", display: "婁峻碩 SHOU" },
+                { search: "邱鋒澤", display: "邱鋒澤" }, { search: "陳零九", display: "陳零九" },
+                { search: "瘦子", display: "瘦子 E.SO" }, { search: "Ozone", display: "Ozone" },
+                { search: "周杰倫", display: "周杰倫" }, { search: "五月天", display: "五月天" }
+            ]
+        },
+        kpop00: {
+            country: "kr", themeColor: "#ff007f", styleClass: "color-kpop", minYear: 2000, maxYear: 2009,
+            artists: [
+                { search: "BIGBANG", display: "BIGBANG" }, { search: "Super Junior", display: "Super Junior" },
+                { search: "Girls' Generation", display: "少女時代" }, { search: "Wonder Girls", display: "Wonder Girls" },
+                { search: "TVXQ!", display: "東方神起" }, { search: "SHINee", display: "SHINee" },
+                { search: "2NE1", display: "2NE1" }, { search: "Rain", display: "Rain" }, { search: "KARA", display: "KARA" },
+                { search: "BoA", display: "BoA" }
+            ]
+        },
+        kpop10: {
+            country: "kr", themeColor: "#ff007f", styleClass: "color-kpop", minYear: 2010, maxYear: 2019,
+            artists: [
+                { search: "BTS", display: "BTS" }, { search: "EXO", display: "EXO" },
+                { search: "TWICE", display: "TWICE" }, { search: "BLACKPINK", display: "BLACKPINK" },
+                { search: "IU", display: "IU" }, { search: "Red Velvet", display: "Red Velvet" },
+                { search: "SEVENTEEN", display: "SEVENTEEN" }, { search: "MAMAMOO", display: "MAMAMOO" },
+                { search: "BIGBANG", display: "BIGBANG" }, { search: "Girls' Generation", display: "少女時代" }
+            ]
+        },
+        kpop20: {
+            country: "kr", themeColor: "#ff007f", styleClass: "color-kpop", minYear: 2020, maxYear: 2026,
+            artists: [
+                { search: "NewJeans", display: "NewJeans" }, { search: "IVE", display: "IVE" },
+                { search: "aespa", display: "aespa" }, { search: "LE SSERAFIM", display: "LE SSERAFIM" },
+                { search: "Stray Kids", display: "Stray Kids" }, { search: "NCT", display: "NCT" },
+                { search: "SEVENTEEN", display: "SEVENTEEN" }, { search: "BLACKPINK", display: "BLACKPINK" },
+                { search: "BTS", display: "BTS" }, { search: "IU", display: "IU" }
+            ]
+        }
+    };
+    
+    let players = [];
+    let currentPlayerIndex = 0;
+    let currentRound = 1;
+    let maxRounds = 5;
+    let selectedCategory = 'jpop20';
+
+    let timerInterval;
+    let timeSpent = 0;
+    let roundMaxTime = 20; 
+    let isExtendedTime = false; 
+    let isSurvivalDead = false; 
+
+    window.onload = function() { updateTheme(); };
+
+    function updateTheme() {
+        const cat = document.getElementById('category-select').value;
+        const mode = document.getElementById('mode-select').value;
+        const title = document.getElementById('main-title');
+        const startBtn = document.getElementById('start-btn');
+        const replayBtn = document.getElementById('replay-btn');
+        
+        title.className = "";
+        
+        if (mode === 'survival') {
+            title.className = 'color-survival';
+            startBtn.style.backgroundColor = musicDatabase[cat].themeColor;
+            replayBtn.style.backgroundColor = "#ff4d4d";
+            replayBtn.style.color = "white";
+            return;
+        }
+
+        const theme = musicDatabase[cat];
+        title.className = theme.styleClass;
+        startBtn.style.backgroundColor = theme.themeColor;
+        replayBtn.style.backgroundColor = theme.themeColor;
+        startBtn.style.color = "#121212";
+        replayBtn.style.color = "#121212";
+    }
+
+    function toggleModeUI() {
+        const mode = document.getElementById('mode-select').value;
+        const partyInputs = document.getElementById('party-inputs');
+        const roundGroup = document.getElementById('round-group');
+        
+        if (mode === 'party') {
+            partyInputs.classList.remove('hidden');
+            roundGroup.classList.remove('hidden');
+        } else if (mode === 'survival') {
+            partyInputs.classList.add('hidden');
+            roundGroup.classList.add('hidden'); 
+        } else {
+            partyInputs.classList.add('hidden');
+            roundGroup.classList.remove('hidden');
+        }
+        updateTheme();
+    }
+
+    function startGame() {
+        selectedCategory = document.getElementById('category-select').value;
+        const mode = document.getElementById('mode-select').value;
+        isSurvivalDead = false;
+
+        const themeColor = musicDatabase[selectedCategory].themeColor;
+        document.getElementById("next-btn").style.backgroundColor = themeColor;
+        document.getElementById("next-btn").style.color = "#121212";
+        document.getElementById("next-btn").className = 'primary-btn hidden';
+
+        if (mode === 'survival') {
+            document.getElementById("next-btn").style.backgroundColor = "#ff4d4d";
+            document.getElementById("next-btn").style.color = "white";
+            maxRounds = Infinity; 
+            players = [{ name: '生存者', score: 0, combo: 0, aiUsed: false, timeUsed: false }];
+        } else if (mode === 'solo') {
+            maxRounds = parseInt(document.getElementById('round-select').value);
+            players = [{ name: '玩家', score: 0, combo: 0, aiUsed: false, timeUsed: false }];
+        } else {
+            maxRounds = parseInt(document.getElementById('round-select').value);
+            const names = [
+                document.getElementById('p1-name').value.trim(),
+                document.getElementById('p2-name').value.trim(),
+                document.getElementById('p3-name').value.trim(),
+                document.getElementById('p4-name').value.trim()
+            ];
+            names.forEach(name => { if (name !== "") players.push({ name: name, score: 0, combo: 0, aiUsed: false, timeUsed: false }); });
+
+            if (players.length < 2) { alert("派對模式最少要有兩個玩家！"); players = []; return; }
+        }
+
+        document.getElementById("start-screen").classList.add("hidden");
+        document.getElementById("game-screen").classList.remove("hidden");
+        if (mode === 'party') document.getElementById("turn-indicator").classList.remove("hidden");
+        
+        playRound();
+    }
+
+    function restartSameSettings() {
+        currentPlayerIndex = 0;
+        currentRound = 1;
+        isSurvivalDead = false;
+
+        players.forEach(player => {
+            player.score = 0;
+            player.combo = 0;
+            player.aiUsed = false;
+            player.timeUsed = false;
+        });
+
+        document.getElementById("end-screen").classList.add("hidden");
+        document.getElementById("game-screen").classList.remove("hidden");
+        
+        playRound();
+    }
+
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
+
+    function cleanTrackName(name) {
+        return name.split(' (')[0].split(' -')[0].split('【')[0].trim();
+    }
+
+    async function fetchTracksForThisQuestion(artistObj) {
+        const config = musicDatabase[selectedCategory];
+        // 增加 API limit 至 100 確保篩選後有足夠歌曲，加上 lang=zh_hk 強制轉換官方中/英譯名
+        const url = `https://itunes.apple.com/search?term=${encodeURIComponent(artistObj.search)}&country=${config.country}&media=music&entity=song&limit=100&lang=zh_hk`;
+        try {
+            const response = await fetch(url);
+            const data = await response.json();
+            let uniqueTracks = [];
+            let seenNames = new Set();
+
+            data.results.forEach(track => {
+                if (track.previewUrl && track.releaseDate) {
+                    // 獲取發行年份
+                    const releaseYear = new Date(track.releaseDate).getFullYear();
+                    
+                    // 年代過濾器 (Time Machine Filter) 嚴格把關
+                    if (releaseYear >= config.minYear && releaseYear <= config.maxYear) {
+                        let cleanName = cleanTrackName(track.trackName);
+                        if (!seenNames.has(cleanName.toLowerCase())) {
+                            seenNames.add(cleanName.toLowerCase());
+                            track.cleanName = cleanName; 
+                            uniqueTracks.push(track);
+                        }
+                    }
+                }
+            });
+            return uniqueTracks;
+        } catch (error) { return []; }
+    }
+
+    function startTimer() {
+        clearInterval(timerInterval);
+        timeSpent = 0;
+        document.getElementById("timer-container").classList.remove("hidden");
+        const timerBar = document.getElementById("timer-bar");
+        timerBar.style.width = "100%";
+        timerBar.style.backgroundColor = "#4CAF50"; 
+
+        timerInterval = setInterval(() => {
+            timeSpent += 0.1;
+            let timeLeft = roundMaxTime - timeSpent;
+            
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                timerBar.style.width = "0%";
+                document.getElementById("music-player").pause();
+            } else {
+                let percentage = (timeLeft / roundMaxTime) * 100;
+                timerBar.style.width = percentage + "%";
+                
+                if (timeSpent <= 10) {
+                    timerBar.style.backgroundColor = "#4CAF50"; 
+                } else if (timeSpent <= 15) {
+                    timerBar.style.backgroundColor = "#ff9800"; 
+                } else {
+                    timerBar.style.backgroundColor = "#ff4d4d"; 
+                }
+            }
+        }, 100);
+    }
+
+    function useAiLifeline() {
+        const currentPlayer = players[currentPlayerIndex];
+        if (currentPlayer.aiUsed) return;
+        currentPlayer.aiUsed = true;
+        document.getElementById("lifeline-ai-btn").disabled = true;
+        
+        const optionButtons = document.querySelectorAll(".option-btn");
+        if (optionButtons.length < 4) return;
+
+        let r1 = Math.random() * 35 + 5;
+        let r2 = Math.random() * 35 + 5;
+        let r3 = Math.random() * 35 + 5;
+        let r4 = Math.random() * 35 + 5;
+        let sum = r1 + r2 + r3 + r4;
+        
+        let p1 = Math.round((r1/sum)*100);
+        let p2 = Math.round((r2/sum)*100);
+        let p3 = Math.round((r3/sum)*100);
+        let p4 = 100 - (p1 + p2 + p3); 
+
+        const infoDiv = document.getElementById("lifeline-result");
+        infoDiv.innerHTML = `🤖 <b>MusicGuessr AI 分析：</b><br>
+        【${optionButtons[0].innerText}】: <b>${p1}%</b><br>
+        【${optionButtons[1].innerText}】: <b>${p2}%</b><br>
+        【${optionButtons[2].innerText}】: <b>${p3}%</b><br>
+        【${optionButtons[3].innerText}】: <b>${p4}%</b>`;
+        infoDiv.classList.remove("hidden");
+    }
+
+    function useTimeLifeline() {
+        const currentPlayer = players[currentPlayerIndex];
+        if (currentPlayer.timeUsed) return;
+        currentPlayer.timeUsed = true;
+        document.getElementById("lifeline-time-btn").disabled = true;
+        roundMaxTime = 30; 
+        isExtendedTime = true;
+
+        const musicPlayer = document.getElementById("music-player");
+        if (musicPlayer.paused && timeSpent >= 20 && timeSpent < 30) {
+            musicPlayer.play().catch(()=>{});
+            startTimer();
+            timeSpent = 20; 
+        }
+    }
+
+async function playRound() {
+        const currentPlayer = players[currentPlayerIndex];
+        const mode = document.getElementById('mode-select').value;
+        roundMaxTime = 20;
+        isExtendedTime = false;
+
+        if (mode === 'party') {
+            document.getElementById("turn-indicator").innerText = `🎧 現在是 ${currentPlayer.name} 的回合！`;
+        }
+        
+        if (mode === 'survival') {
+            document.getElementById("round-counter").innerText = `🔥 生存題數: ${currentRound}`;
+        } else {
+            document.getElementById("round-counter").innerText = `進度: ${currentRound} / ${maxRounds}`;
+        }
+        document.getElementById("score-display").innerText = `分數: ${currentPlayer.score}`;
+        
+        document.getElementById("lifeline-ai-btn").disabled = currentPlayer.aiUsed;
+        document.getElementById("lifeline-time-btn").disabled = currentPlayer.timeUsed;
+        document.getElementById("lifeline-result").classList.add("hidden");
+
+        const comboDiv = document.getElementById("combo-display");
+        if (currentPlayer.combo >= 2) {
+            let fireIcon = currentPlayer.combo >= 3 ? '🔥' : '✨';
+            comboDiv.innerText = `${fireIcon} ${currentPlayer.combo} 連擊中！`;
+            comboDiv.classList.remove("hidden");
+        } else {
+            comboDiv.classList.add("hidden");
+        }
+        
+        document.getElementById("next-btn").classList.add("hidden");
+        document.getElementById("timer-container").classList.add("hidden");
+        document.getElementById("apple-link-container").classList.add("hidden");
+
+        const optionsContainer = document.getElementById("options");
+        optionsContainer.innerHTML = "";
+        
+        const musicPlayer = document.getElementById("music-player");
+        const loadingMsg = document.getElementById("loading-msg");
+        const questionText = document.getElementById("question-text");
+        
+        musicPlayer.pause();
+        musicPlayer.src = "";
+        clearInterval(timerInterval); 
+        
+        loadingMsg.classList.remove("hidden");
+        musicPlayer.classList.add("hidden");
+        questionText.innerText = "正在尋找歌曲... (可能需要幾秒)";
+
+        // 🎯 核心修正：區分「原版歌手模式」與「精準神曲模式」
+        const dbConfig = musicDatabase[selectedCategory];
+        const isSongMode = !!dbConfig.hitSongs; // 如果該曲庫有設定 hitSongs，就進入神曲模式
+        const currentPool = isSongMode ? dbConfig.hitSongs : dbConfig.artists;
+
+        let randomItem = currentPool[Math.floor(Math.random() * currentPool.length)];
+        let tracks = await fetchTracksForThisQuestion(randomItem);
+
+        if (tracks.length > 0) {
+            retryCount = 0;
+            let selectedOptions = [];
+            let correctTrackData = null;
+            let correctIdForCheck = null;
+
+            if (isSongMode) {
+                // 🎶 【神曲大亂鬥模式】(Meme / 動漫)：只攞第一首最準嘅，其餘選項從自己題庫抽
+                correctTrackData = tracks[0];
+                correctIdForCheck = randomItem.search; 
+                
+                // 抽另外 3 首唔同嘅神曲做干擾
+                let otherOptions = shuffleArray(currentPool.filter(item => item.search !== randomItem.search)).slice(0, 3);
+                selectedOptions = shuffleArray([randomItem, ...otherOptions]);
+
+                loadingMsg.classList.add("hidden");
+                questionText.innerText = `聽前奏，估下呢首係咩歌曲？`; // 修正怪異問題字眼
+                
+                selectedOptions.forEach(opt => {
+                    let btn = document.createElement("button");
+                    btn.innerText = opt.display; 
+                    btn.className = "option-btn";
+                    btn.onclick = function() { checkAnswer(this, opt.search, correctIdForCheck, selectedOptions, currentPlayer, correctTrackData, isSongMode) };
+                    optionsContainer.appendChild(btn);
+                });
+
+            } else {
+                // 🎤 【原版歌手模式】(Jpop / Canto / Kpop)：從同一個歌手抽 4 首唔同嘅歌
+                if (tracks.length < 4) {
+                    retryCount++;
+                    if (retryCount > 3) { alert("⚠️ Apple 伺服器繁忙，請重新開始！"); location.reload(); return; }
+                    playRound(); return;
+                }
+                
+                tracks = shuffleArray(tracks);
+                selectedOptions = tracks.slice(0, 4); 
+                let correctIndex = Math.floor(Math.random() * 4);
+                correctTrackData = selectedOptions[correctIndex];
+                correctIdForCheck = correctTrackData.trackId;
+
+                loadingMsg.classList.add("hidden");
+                questionText.innerText = `聽前奏，估下係 ${randomItem.display} 嘅邊首歌？`;
+                
+                selectedOptions.forEach(track => {
+                    let btn = document.createElement("button");
+                    btn.innerText = track.cleanName; 
+                    btn.className = "option-btn";
+                    btn.onclick = function() { checkAnswer(this, track.trackId, correctIdForCheck, selectedOptions, currentPlayer, correctTrackData, isSongMode) };
+                    optionsContainer.appendChild(btn);
+                });
+            }
+
+            musicPlayer.src = correctTrackData.previewUrl;
+            musicPlayer.classList.remove("hidden");
+            
+            musicPlayer.play().then(() => {
+                startTimer();
+            }).catch(()=> {
+                musicPlayer.onplay = () => { startTimer(); musicPlayer.onplay = null; };
+            });
+
+        } else {
+            retryCount++;
+            if (retryCount > 3) {
+                alert("⚠️ Apple Music 伺服器繁忙或歌曲不足，請返回大堂重新開始！");
+                location.reload();
+                return;
+            }
+            playRound(); 
+        }
+    }
+
+    function checkAnswer(clickedBtn, selectedId, correctId, optionList, currentPlayer, correctTrackData, isSongMode) {
+        const allBtns = document.querySelectorAll(".option-btn");
+        const musicPlayer = document.getElementById("music-player");
+        const questionText = document.getElementById("question-text");
+        const comboDiv = document.getElementById("combo-display");
+        const mode = document.getElementById('mode-select').value;
+        
+        clearInterval(timerInterval); 
+        allBtns.forEach(btn => btn.disabled = true);
+        musicPlayer.pause(); 
+
+        document.getElementById("lifeline-ai-btn").disabled = true;
+        document.getElementById("lifeline-time-btn").disabled = true;
+
+        if (selectedId === correctId) {
+            clickedBtn.classList.add("btn-correct");
+            currentPlayer.combo++; 
+
+            let basePoints = 0;
+            let speedMsg = "";
+
+            if (timeSpent <= 3) {
+                basePoints = 15;
+                speedMsg = `<span style="color:#ffb703;">⚡ 秒殺！(+15)</span>`;
+            } else if (timeSpent <= 5) {
+                basePoints = 11;
+                speedMsg = `<span style="color:#4CAF50;">🚀 極速！(+11)</span>`;
+            } else if (timeSpent <= 20) {
+                basePoints = 10;
+                speedMsg = `<span style="color:#aaa;">✅ 答啱！(+10)</span>`;
+            } else if (timeSpent > 20 && isExtendedTime) {
+                basePoints = 10;
+                speedMsg = `<span style="color:#00d2ff;">⏳ 錦囊加時答啱！(+10)</span>`;
+            } else {
+                basePoints = 5;
+                speedMsg = `<span style="color:#ff4d4d;">🐢 逾時補底！(+5)</span>`;
+            }
+
+            let comboBonus = 0;
+            let comboMsg = "";
+            if (currentPlayer.combo >= 2) {
+                comboBonus = currentPlayer.combo;
+                let fireIcon = currentPlayer.combo >= 3 ? "🔥" : "✨";
+                comboMsg = ` <span style="color:#ff9800;">| ${fireIcon} ${currentPlayer.combo} 連擊 (+${comboBonus})</span>`;
+                comboDiv.innerText = `${fireIcon} ${currentPlayer.combo} 連擊達成！`;
+                comboDiv.classList.remove("hidden");
+            }
+
+            currentPlayer.score += (basePoints + comboBonus);
+            document.getElementById("score-display").innerText = `分數: ${currentPlayer.score}`;
+            questionText.innerHTML += `<br>${speedMsg}${comboMsg}`;
+
+        } else {
+            currentPlayer.combo = 0; 
+            clickedBtn.classList.add("btn-wrong");
+            
+            if (mode === 'survival') {
+                isSurvivalDead = true;
+                questionText.innerHTML += `<br><span style="color:#ff4d4d;">💥 答錯咗！一命通關失敗！</span>`;
+            } else {
+                questionText.innerHTML += `<br><span style="color:#ff4d4d;">❌ 答錯咗！連擊斷咗啦...</span>`;
+            }
+            comboDiv.classList.add("hidden"); 
+            
+            // 標示正確答案
+            allBtns.forEach((btn, index) => {
+                let currentBtnId = isSongMode ? optionList[index].search : optionList[index].trackId;
+                if (currentBtnId === correctId) {
+                    btn.classList.add("btn-correct");
+                }
+            });
+        }
+
+        // 顯示 Apple Music 連結
+        if (correctTrackData && correctTrackData.trackViewUrl) {
+            document.getElementById("apple-music-btn").href = correctTrackData.trackViewUrl;
+            document.getElementById("apple-link-container").classList.remove("hidden");
+        }
+
+        let isLastPlayer = (currentPlayerIndex === players.length - 1);
+        let isLastRound = (currentRound === maxRounds);
+        let nextBtn = document.getElementById("next-btn");
+        
+        if (mode === 'survival' && isSurvivalDead) {
+            nextBtn.innerText = "💥 睇賽果 ➔";
+        } else if (isLastPlayer && isLastRound) {
+            nextBtn.innerText = "睇賽果 ➔";
+        } else if (isLastPlayer) {
+            nextBtn.innerText = mode === 'solo' || mode === 'survival' ? "下一題 ➔" : "進入下一回合 ➔";
+        } else {
+            nextBtn.innerText = `傳給 ${players[currentPlayerIndex + 1].name} ➔`;
+        }
+        
+        nextBtn.classList.remove("hidden");
+    }
+
+    function nextTurn() {
+        const mode = document.getElementById('mode-select').value;
+        if (mode === 'survival' && isSurvivalDead) {
+            endGame();
+            return;
+        }
+
+        currentPlayerIndex++;
+        
+        if (currentPlayerIndex >= players.length) {
+            currentPlayerIndex = 0;
+            currentRound++;
+        }
+
+        if (currentRound > maxRounds) {
+            endGame();
+        } else {
+            playRound();
+        }
+    }
+
+    function triggerConfetti() {
+        var duration = 3000;
+        var end = Date.now() + duration;
+        const currentThemeColor = musicDatabase[selectedCategory].themeColor;
+
+        (function frame() {
+            confetti({
+                particleCount: 5, angle: 60, spread: 55, origin: { x: 0 },
+                colors: [currentThemeColor, '#ffffff', '#4CAF50']
+            });
+            confetti({
+                particleCount: 5, angle: 120, spread: 55, origin: { x: 1 },
+                colors: [currentThemeColor, '#ffffff', '#4CAF50']
+            });
+            if (Date.now() < end) { requestAnimationFrame(frame); }
+        }());
+    }
+
+    function endGame() {
+        document.getElementById("game-screen").classList.add("hidden");
+        document.getElementById("end-screen").classList.remove("hidden");
+        const mode = document.getElementById('mode-select').value;
+        
+        triggerConfetti();
+
+        const leaderboardDiv = document.getElementById("leaderboard");
+        const endTitle = document.getElementById("end-title");
+        leaderboardDiv.innerHTML = "";
+        
+        if (mode === 'survival') {
+            endTitle.innerText = "🔥 生存挑戰結束！";
+            endTitle.style.color = "#ff4d4d";
+            let p = players[0];
+            let item = document.createElement("div");
+            item.className = "leaderboard-item";
+            item.innerHTML = `<span>🌟 生存題數: <b>${currentRound - 1} 題</b></span> <span>${p.score} 分</span>`;
+            leaderboardDiv.appendChild(item);
+        } else {
+            endTitle.innerText = "🏆 賽果出爐！";
+            endTitle.style.color = "#4CAF50";
+            let sortedPlayers = [...players].sort((a, b) => b.score - a.score);
+            let medals = ["🥇", "🥈", "🥉", "👏"];
+            sortedPlayers.forEach((player, index) => {
+                let item = document.createElement("div");
+                item.className = "leaderboard-item";
+                let rankSymbol = mode === 'solo' ? "🌟" : (medals[index] || "👏");
+                item.innerHTML = `<span>${rankSymbol} ${player.name}</span> <span>${player.score} 分</span>`;
+                leaderboardDiv.appendChild(item);
+            });
+        }
+    }
+</script>
+</body>
+</html>
