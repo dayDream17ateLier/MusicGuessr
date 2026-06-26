@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh-HK">
+<html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>估歌派對 MusicGuessr</title>
+    <title>🎶 估歌派對 MusicGuessr</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
     <style>
         body {
@@ -198,19 +198,37 @@
         .leaderboard { text-align: left; background: #2a2a2a; padding: 20px; border-radius: 10px; margin-top: 20px; }
         .leaderboard-item { font-size: 20px; padding: 10px 0; border-bottom: 1px solid #444; display: flex; justify-content: space-between; }
         .leaderboard-item:last-child { border-bottom: none; }
+
+        /* Language Toggle */
+        .lang-toggle {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: #333;
+            border: 1px solid #555;
+            color: #ddd;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: 0.2s;
+            z-index: 100;
+        }
+        .lang-toggle:hover { background: #555; color: #fff; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1 id="main-title" class="color-jpop">🎶 估歌派對 MusicGuessr</h1>
+    <button class="lang-toggle" id="lang-toggle-btn" onclick="toggleLang()">EN</button>
+    <h1 id="main-title" class="color-jpop">🎶 <span id="app-title-text">估歌派對 MusicGuessr</span></h1>
 
     <div id="start-screen">
         <div class="setup-group">
-            <label>🌍 選擇專屬曲庫</label>
+            <label data-i18n="labelCategory">🌍 選擇專屬曲庫</label>
             <select id="category-select" onchange="updateTheme()">
                 <option value="meme">🤡 迷因大挑戰 (Meme Songs)</option>
-                <option value="anime">🔰 動漫專區 (1980-2026)</option>
+                <option value="anime">🔰 動漫專區</option>
                 <option value="jpop00">🇯🇵 J-Pop (2000-2009)</option>
                 <option value="jpop10">🇯🇵 J-Pop (2010-2019)</option>
                 <option value="jpop20">🇯🇵 J-Pop (2020-2026)</option>
@@ -228,31 +246,31 @@
             </select>
         </div>
         <div class="setup-group">
-            <label>🎮 選擇遊玩模式</label>
+            <label data-i18n="labelMode">🎮 選擇遊玩模式</label>
             <select id="mode-select" onchange="toggleModeUI()">
-                <option value="solo">👤 單人練功模式</option>
-                <option value="party">👥 多人派對模式 (2-4人)</option>
-                <option value="survival">🔥 一命通關 (生存模式)</option>
+                <option value="solo" data-i18n="modeSolo">👤 單人模式</option>
+                <option value="party" data-i18n="modeParty">👥 多人模式 (2-4人)</option>
+                <option value="survival" data-i18n="modeSurvival">🔥 生存模式</option>
             </select>
         </div>
         
         <div class="setup-group" id="round-group">
-            <label>⏱️ 選擇題數 / 回合數</label>
+            <label data-i18n="labelRounds">⏱️ 選擇題數 / 回合數</label>
             <select id="round-select">
-                <option value="3">3 回合 (快閃熱身)</option>
-                <option value="5" selected>5 回合 (標準局)</option>
-                <option value="10">10 回合 (地獄鐵人賽)</option>
+                <option value="3" data-i18n="rounds3">3 回合 (熱身)</option>
+                <option value="5" selected data-i18n="rounds5">5 回合 (標準)</option>
+                <option value="10" data-i18n="rounds10">10 回合 (地獄)</option>
             </select>
         </div>
         
         <div class="setup-group hidden" id="party-inputs">
-            <label>📝 輸入玩家名字</label>
-            <input type="text" id="p1-name" placeholder="玩家 1 名字" value="玩家 A">
-            <input type="text" id="p2-name" placeholder="玩家 2 名字" value="玩家 B">
-            <input type="text" id="p3-name" placeholder="玩家 3 名字 (可留空)">
-            <input type="text" id="p4-name" placeholder="玩家 4 名字 (可留空)">
+            <label data-i18n="labelPlayerNames">📝 輸入玩家名字</label>
+            <input type="text" id="p1-name" data-i18n-placeholder="placeholderP1" placeholder="玩家 1 名字" value="玩家 A">
+            <input type="text" id="p2-name" data-i18n-placeholder="placeholderP2" placeholder="玩家 2 名字" value="玩家 B">
+            <input type="text" id="p3-name" data-i18n-placeholder="placeholderP3" placeholder="玩家 3 名字 (可留空)">
+            <input type="text" id="p4-name" data-i18n-placeholder="placeholderP4" placeholder="玩家 4 名字 (可留空)">
         </div>
-        <button id="start-btn" class="primary-btn" onclick="startGame()">開始遊戲</button>
+        <button id="start-btn" class="primary-btn" onclick="startGame()" data-i18n="btnStart">開始遊戲</button>
     </div>
 
     <div id="game-screen" class="hidden">
@@ -264,15 +282,15 @@
         <div class="turn-indicator hidden" id="turn-indicator">現在是 某某 的回合！</div>
         
         <div class="lifeline-box" id="lifeline-box">
-            <button class="lifeline-btn" id="lifeline-ai-btn" onclick="useAiLifeline()">🤖 問 AI</button>
-            <button class="lifeline-btn" id="lifeline-time-btn" onclick="useTimeLifeline()">⏳ 加時神器</button>
+            <button class="lifeline-btn" id="lifeline-ai-btn" onclick="useAiLifeline()" data-i18n="btnAI">🤖 問 AI</button>
+            <button class="lifeline-btn" id="lifeline-time-btn" onclick="useTimeLifeline()" data-i18n="btnTime">⏳ 加時神器</button>
         </div>
         <div id="lifeline-result" class="hidden"></div>
 
         <div id="combo-display" class="combo-text hidden"></div>
         
-        <div class="question-text" id="question-text">準備中...</div>
-        <div id="loading-msg">正在尋找歌曲... (可能需要幾秒)</div>
+        <div class="question-text" id="question-text">...</div>
+        <div id="loading-msg" data-i18n="loadingMsg">正在尋找歌曲... (可能需要幾秒)</div>
         
         <div class="timer-container hidden" id="timer-container">
             <div class="timer-bar" id="timer-bar"></div>
@@ -283,7 +301,7 @@
         
         <div id="apple-link-container" class="hidden">
             <a id="apple-music-btn" href="#" target="_blank" class="apple-music-link-btn">
-                🎵 在 Apple Music 聽完整版
+                <span data-i18n="listenApple">🎵 在 Apple Music 聽完整版</span>
             </a>
         </div>
 
@@ -295,13 +313,215 @@
         <div class="leaderboard" id="leaderboard"></div>
         
         <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 25px;">
-            <button class="primary-btn" id="replay-btn" onclick="restartSameSettings()">🔄 原班人馬再玩一次</button>
-            <button class="primary-btn btn-secondary" onclick="location.reload()">🏠 返回主頁重設</button>
+            <button class="primary-btn" id="replay-btn" onclick="restartSameSettings()" data-i18n="btnReplay">🔄 原班人馬再玩一次</button>
+            <button class="primary-btn btn-secondary" onclick="location.reload()" data-i18n="btnHome">🏠 返回主頁</button>
         </div>
     </div>
 </div>
 
 <script>
+
+    // ==========================================
+    // 🌐 i18n Multi-Language System
+    // ==========================================
+    let currentLang = 'zh'; // 'zh' = 繁體中文, 'en' = English
+
+    const i18n = {
+        zh: {
+            // UI Labels
+            appTitle: '🎶 估歌派對 MusicGuessr',
+            langBtn: 'EN',
+            labelCategory: '🌍 選擇專屬題庫',
+            labelMode: '🎮 選擇遊玩模式',
+            labelRounds: '⏱️ 選擇題數 / 回合數',
+            labelPlayerNames: '📝 輸入玩家名字',
+            // Mode options
+            modeSolo: '👤 單人模式',
+            modeParty: '👥 多人模式 (2-4人)',
+            modeSurvival: '🔥 生存模式',
+            // Round options
+            rounds3: '3 回合 (熱身)',
+            rounds5: '5 回合 (標準)',
+            rounds10: '10 回合 (地獄)',
+            // Placeholders
+            placeholderP1: '玩家 1 名字',
+            placeholderP2: '玩家 2 名字',
+            placeholderP3: '玩家 3 名字 (可留空)',
+            placeholderP4: '玩家 4 名字 (可留空)',
+            // Buttons
+            btnStart: '開始遊戲',
+            btnReplay: '🔄 原班人馬再玩一次',
+            btnHome: '🏠 返回主頁重設',
+            listenApple: '🎵 在 Apple Music 聽完整版',
+            // Game screen dynamic text
+            loadingMsg: '正在尋找歌曲... (可能需要幾秒)',
+            questionSong: '猜一猜這首歌是什麼？',
+            questionArtist: (artist) => `猜一猜，是 ${artist} 的哪一首歌？`,
+            turnIndicator: (name) => `🎧 現在是 ${name} 的回合！`,
+            progressLabel: (cur, max) => `進度: ${cur} / ${max}`,
+            survivalLabel: (n) => `🔥 生存題數: ${n}`,
+            scoreLabel: (n) => `分數: ${n}`,
+            // Lifelines
+            btnAI: '🤖 問 AI',
+            btnTime: '⏳ 加時神器',
+            aiAnalysis: '🤖 MusicGuessr AI 分析：',
+            // Combo
+            comboActive: (n, icon) => `${icon} ${n} 連擊中！`,
+            comboAchieved: (n, icon) => `${icon} ${n} 連擊達成！`,
+            // Score messages
+            msgInstakill: '⚡ 秒殺！(+15)',
+            msgSpeed: '🚀 極速！(+11)',
+            msgCorrect: '✅ 答對！(+10)',
+            msgExtended: '⏳ 錦囊加時答對！(+10)',
+            msgTimeout: '🐢 逾時補底！(+5)',
+            msgCombo: (n, bonus) => `🔥 ${n} 連擊 (+${bonus})`,
+            msgWrong: '❌ 答錯了！連擊斷了...',
+            msgSurvivalDead: '💥 答錯了！一命通關失敗！',
+            // Next button
+            nextQuestion: '下一題 ➔',
+            nextRound: '進入下一回合 ➔',
+            nextPass: (name) => `傳給 ${name} ➔`,
+            nextResults: '看賽果 ➔',
+            nextSurvivalEnd: '💥 看賽果 ➔',
+            // End screen
+            endTitleSurvival: '🔥 生存挑戰結束！',
+            endTitleNormal: '🏆 賽果出爐！',
+            survivalResult: (n) => `🌟 生存題數: <b>${n} 題</b>`,
+            pointsLabel: (n) => `${n} 分`,
+            // Default player names
+            defaultSoloName: '玩家',
+            defaultSurvivalName: '生存者',
+            // Alerts
+            alertServerBusy: '⚠️ Apple 伺服器繁忙，請重新開始！',
+            alertServerBusy2: '⚠️ Apple Music 伺服器繁忙或歌曲不足，請返回大堂重新開始！',
+            alertNeedTwoPlayers: '派對模式最少要有兩個玩家！',
+        },
+        en: {
+            // UI Labels
+            appTitle: '🎶 Music Guessr Party',
+            langBtn: '中文',
+            labelCategory: '🌍 Select Music Library',
+            labelMode: '🎮 Select Game Mode',
+            labelRounds: '⏱️ Select Number of Rounds',
+            labelPlayerNames: '📝 Enter Player Names',
+            // Mode options
+            modeSolo: '👤 Solo Mode',
+            modeParty: '👥 Party Mode (2-4 Players)',
+            modeSurvival: '🔥 One Life Challenge',
+            // Round options
+            rounds3: '3 Rounds (Quick)',
+            rounds5: '5 Rounds (Standard)',
+            rounds10: '10 Rounds (Marathon)',
+            // Placeholders
+            placeholderP1: 'Player 1 Name',
+            placeholderP2: 'Player 2 Name',
+            placeholderP3: 'Player 3 Name (Optional)',
+            placeholderP4: 'Player 4 Name (Optional)',
+            // Buttons
+            btnStart: 'Start Game',
+            btnReplay: '🔄 Play Again (Same Players)',
+            btnHome: '🏠 Return to Home',
+            listenApple: '🎵 Listen on Apple Music',
+            // Game screen dynamic text
+            loadingMsg: 'Finding a song... (may take a few seconds)',
+            questionSong: 'Listen to the intro — which song is this?',
+            questionArtist: (artist) => `Listen to the intro — which ${artist} song is this?`,
+            turnIndicator: (name) => `🎧 It's ${name}'s Turn!`,
+            progressLabel: (cur, max) => `Round: ${cur} / ${max}`,
+            survivalLabel: (n) => `🔥 Questions Survived: ${n}`,
+            scoreLabel: (n) => `Score: ${n}`,
+            // Lifelines
+            btnAI: '🤖 Ask AI',
+            btnTime: '⏳ Extra Time',
+            aiAnalysis: '🤖 MusicGuessr AI Analysis:',
+            // Combo
+            comboActive: (n, icon) => `${icon} ${n}x Combo!`,
+            comboAchieved: (n, icon) => `${icon} ${n}x Combo!`,
+            // Score messages
+            msgInstakill: '⚡ Instant! (+15)',
+            msgSpeed: '🚀 Super Fast! (+11)',
+            msgCorrect: '✅ Correct! (+10)',
+            msgExtended: '⏳ Correct with Extra Time! (+10)',
+            msgTimeout: '🐢 Overtime — Just Made It! (+5)',
+            msgCombo: (n, bonus) => `🔥 ${n}x Combo (+${bonus})`,
+            msgWrong: '❌ Wrong! Combo broken...',
+            msgSurvivalDead: '💥 Wrong! One Life Challenge failed!',
+            // Next button
+            nextQuestion: 'Next Question ➔',
+            nextRound: 'Next Round ➔',
+            nextPass: (name) => `Pass to ${name} ➔`,
+            nextResults: 'See Results ➔',
+            nextSurvivalEnd: '💥 See Results ➔',
+            // End screen
+            endTitleSurvival: '🔥 Survival Challenge Over!',
+            endTitleNormal: '🏆 Results!',
+            survivalResult: (n) => `🌟 Questions Survived: <b>${n}</b>`,
+            pointsLabel: (n) => `${n} pts`,
+            // Default player names
+            defaultSoloName: 'Player',
+            defaultSurvivalName: 'Survivor',
+            // Alerts
+            alertServerBusy: '⚠️ Apple servers are busy. Please restart!',
+            alertServerBusy2: '⚠️ Apple Music server busy or not enough songs. Please return to home!',
+            alertNeedTwoPlayers: 'Party mode requires at least 2 players!',
+        }
+    };
+
+    function t(key, ...args) {
+        const val = i18n[currentLang][key];
+        if (typeof val === 'function') return val(...args);
+        return val || i18n['zh'][key] || key;
+    }
+
+    function applyLang() {
+        // Update html lang attribute
+        document.documentElement.lang = currentLang === 'zh' ? 'zh-TW' : 'en';
+
+        // Update lang toggle button
+        document.getElementById('lang-toggle-btn').textContent = t('langBtn');
+
+        // Update app title
+        const titleSpan = document.getElementById('app-title-text'); if (titleSpan) titleSpan.textContent = t('appTitle').replace(/🎶 /, '');
+        document.title = t('appTitle');
+
+        // Update all data-i18n elements
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            if (el.tagName === 'OPTION') {
+                el.textContent = t(key);
+            } else {
+                el.textContent = t(key);
+            }
+        });
+
+        // Update placeholders
+        document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+            const key = el.getAttribute('data-i18n-placeholder');
+            el.placeholder = t(key);
+        });
+
+        // Update loading msg if visible
+        const loadingMsg = document.getElementById('loading-msg');
+        if (loadingMsg && !loadingMsg.classList.contains('hidden')) {
+            loadingMsg.textContent = t('loadingMsg');
+        }
+
+        // Update lifeline buttons text
+        const aiBtn = document.getElementById('lifeline-ai-btn');
+        const timeBtn = document.getElementById('lifeline-time-btn');
+        if (aiBtn) aiBtn.textContent = t('btnAI');
+        if (timeBtn) timeBtn.textContent = t('btnTime');
+    }
+
+    function toggleLang() {
+        currentLang = currentLang === 'zh' ? 'en' : 'zh';
+        applyLang();
+    }
+
+    // ==========================================
+    // END i18n System
+    // ==========================================
+
     // --- 時光機與跨年代歌手資料庫 ---
     // 每個曲庫加入 minYear 同 maxYear
     const musicDatabase = {
@@ -1148,7 +1368,7 @@
     let isExtendedTime = false; 
     let isSurvivalDead = false; 
 
-    window.onload = function() { updateTheme(); };
+    window.onload = function() { updateTheme(); applyLang(); };
 
     function updateTheme() {
         const cat = document.getElementById('category-select').value;
@@ -1207,10 +1427,10 @@
             document.getElementById("next-btn").style.backgroundColor = "#ff4d4d";
             document.getElementById("next-btn").style.color = "white";
             maxRounds = Infinity; 
-            players = [{ name: '生存者', score: 0, combo: 0, aiUsed: false, timeUsed: false }];
+            players = [{ name: t('defaultSurvivalName'), score: 0, combo: 0, aiUsed: false, timeUsed: false }];
         } else if (mode === 'solo') {
             maxRounds = parseInt(document.getElementById('round-select').value);
-            players = [{ name: '玩家', score: 0, combo: 0, aiUsed: false, timeUsed: false }];
+            players = [{ name: t('defaultSoloName'), score: 0, combo: 0, aiUsed: false, timeUsed: false }];
         } else {
             maxRounds = parseInt(document.getElementById('round-select').value);
             const names = [
@@ -1221,7 +1441,7 @@
             ];
             names.forEach(name => { if (name !== "") players.push({ name: name, score: 0, combo: 0, aiUsed: false, timeUsed: false }); });
 
-            if (players.length < 2) { alert("派對模式最少要有兩個玩家！"); players = []; return; }
+            if (players.length < 2) { alert(t('alertNeedTwoPlayers')); players = []; return; }
         }
 
         document.getElementById("start-screen").classList.add("hidden");
@@ -1341,7 +1561,7 @@ function useAiLifeline() {
         let p4 = 100 - (p1 + p2 + p3); 
 
         const infoDiv = document.getElementById("lifeline-result");
-        infoDiv.innerHTML = `🤖 <b>MusicGuessr AI 分析：</b><br>
+        infoDiv.innerHTML = `🤖 <b>${t('aiAnalysis')}</b><br>
         【${optionButtons[0].innerText}】: <b>${p1}%</b><br>
         【${optionButtons[1].innerText}】: <b>${p2}%</b><br>
         【${optionButtons[2].innerText}】: <b>${p3}%</b><br>
@@ -1372,15 +1592,15 @@ async function playRound() {
         isExtendedTime = false;
 
         if (mode === 'party') {
-            document.getElementById("turn-indicator").innerText = `🎧 現在是 ${currentPlayer.name} 的回合！`;
+            document.getElementById("turn-indicator").innerText = t('turnIndicator', currentPlayer.name);
         }
         
         if (mode === 'survival') {
-            document.getElementById("round-counter").innerText = `🔥 生存題數: ${currentRound}`;
+            document.getElementById("round-counter").innerText = t('survivalLabel', currentRound);
         } else {
-            document.getElementById("round-counter").innerText = `進度: ${currentRound} / ${maxRounds}`;
+            document.getElementById("round-counter").innerText = t('progressLabel', currentRound, maxRounds);
         }
-        document.getElementById("score-display").innerText = `分數: ${currentPlayer.score}`;
+        document.getElementById("score-display").innerText = t('scoreLabel', currentPlayer.score);
         
         document.getElementById("lifeline-ai-btn").disabled = false;
         document.getElementById("lifeline-time-btn").disabled = currentPlayer.timeUsed;
@@ -1389,7 +1609,7 @@ async function playRound() {
         const comboDiv = document.getElementById("combo-display");
         if (currentPlayer.combo >= 2) {
             let fireIcon = currentPlayer.combo >= 3 ? '🔥' : '✨';
-            comboDiv.innerText = `${fireIcon} ${currentPlayer.combo} 連擊中！`;
+            comboDiv.innerText = t('comboActive', currentPlayer.combo, fireIcon);
             comboDiv.classList.remove("hidden");
         } else {
             comboDiv.classList.add("hidden");
@@ -1412,7 +1632,7 @@ async function playRound() {
         
         loadingMsg.classList.remove("hidden");
         musicPlayer.classList.add("hidden");
-        questionText.innerText = "正在尋找歌曲... (可能需要幾秒)";
+        questionText.innerText = t('loadingMsg');
 
         // 🎯 核心修正：區分「原版歌手模式」與「精準神曲模式」
         const dbConfig = musicDatabase[selectedCategory];
@@ -1438,7 +1658,7 @@ async function playRound() {
                 selectedOptions = shuffleArray([randomItem, ...otherOptions]);
 
                 loadingMsg.classList.add("hidden");
-                questionText.innerText = `聽前奏，估下呢首係咩歌曲？`; // 修正怪異問題字眼
+                questionText.innerText = t('questionSong');
                 
                 selectedOptions.forEach(opt => {
                     let btn = document.createElement("button");
@@ -1452,7 +1672,7 @@ async function playRound() {
                 // 🎤 【原版歌手模式】(Jpop / Canto / Kpop)：從同一個歌手抽 4 首唔同嘅歌
                 if (tracks.length < 4) {
                     retryCount++;
-                    if (retryCount > 3) { alert("⚠️ Apple 伺服器繁忙，請重新開始！"); location.reload(); return; }
+                    if (retryCount > 3) { alert(t('alertServerBusy')); location.reload(); return; }
                     playRound(); return;
                 }
                 
@@ -1463,7 +1683,7 @@ async function playRound() {
                 correctIdForCheck = correctTrackData.trackId;
 
                 loadingMsg.classList.add("hidden");
-                questionText.innerText = `聽前奏，估下係 ${randomItem.display} 嘅邊首歌？`;
+                questionText.innerText = t('questionArtist', randomItem.display);
                 
                 selectedOptions.forEach(track => {
                     let btn = document.createElement("button");
@@ -1486,7 +1706,7 @@ async function playRound() {
         } else {
             retryCount++;
             if (retryCount > 3) {
-                alert("⚠️ Apple Music 伺服器繁忙或歌曲不足，請返回大堂重新開始！");
+                alert(t('alertServerBusy2'));
                 location.reload();
                 return;
             }
@@ -1517,19 +1737,19 @@ async function playRound() {
 
             if (timeSpent <= 3) {
                 basePoints = 15;
-                speedMsg = `<span style="color:#ffb703;">⚡ 秒殺！(+15)</span>`;
+                speedMsg = `<span style="color:#ffb703;">${t('msgInstakill')}</span>`;
             } else if (timeSpent <= 5) {
                 basePoints = 11;
-                speedMsg = `<span style="color:#4CAF50;">🚀 極速！(+11)</span>`;
+                speedMsg = `<span style="color:#4CAF50;">${t('msgSpeed')}</span>`;
             } else if (timeSpent <= 20) {
                 basePoints = 10;
-                speedMsg = `<span style="color:#aaa;">✅ 答啱！(+10)</span>`;
+                speedMsg = `<span style="color:#aaa;">${t('msgCorrect')}</span>`;
             } else if (timeSpent > 20 && isExtendedTime) {
                 basePoints = 10;
-                speedMsg = `<span style="color:#00d2ff;">⏳ 錦囊加時答啱！(+10)</span>`;
+                speedMsg = `<span style="color:#00d2ff;">${t('msgExtended')}</span>`;
             } else {
                 basePoints = 5;
-                speedMsg = `<span style="color:#ff4d4d;">🐢 逾時補底！(+5)</span>`;
+                speedMsg = `<span style="color:#ff4d4d;">${t('msgTimeout')}</span>`;
             }
 
             let comboBonus = 0;
@@ -1537,8 +1757,8 @@ async function playRound() {
             if (currentPlayer.combo >= 2) {
                 comboBonus = currentPlayer.combo;
                 let fireIcon = currentPlayer.combo >= 3 ? "🔥" : "✨";
-                comboMsg = ` <span style="color:#ff9800;">| ${fireIcon} ${currentPlayer.combo} 連擊 (+${comboBonus})</span>`;
-                comboDiv.innerText = `${fireIcon} ${currentPlayer.combo} 連擊達成！`;
+                comboMsg = ` <span style="color:#ff9800;">| ${t('msgCombo', currentPlayer.combo, comboBonus)}</span>`;
+                comboDiv.innerText = t('comboAchieved', currentPlayer.combo, fireIcon);
                 comboDiv.classList.remove("hidden");
             }
 
@@ -1552,9 +1772,9 @@ async function playRound() {
             
             if (mode === 'survival') {
                 isSurvivalDead = true;
-                questionText.innerHTML += `<br><span style="color:#ff4d4d;">💥 答錯咗！一命通關失敗！</span>`;
+                questionText.innerHTML += `<br><span style="color:#ff4d4d;">${t('msgSurvivalDead')}</span>`;
             } else {
-                questionText.innerHTML += `<br><span style="color:#ff4d4d;">❌ 答錯咗！連擊斷咗啦...</span>`;
+                questionText.innerHTML += `<br><span style="color:#ff4d4d;">${t('msgWrong')}</span>`;
             }
             comboDiv.classList.add("hidden"); 
             
@@ -1578,13 +1798,13 @@ async function playRound() {
         let nextBtn = document.getElementById("next-btn");
         
         if (mode === 'survival' && isSurvivalDead) {
-            nextBtn.innerText = "💥 睇賽果 ➔";
+            nextBtn.innerText = t('nextSurvivalEnd');
         } else if (isLastPlayer && isLastRound) {
-            nextBtn.innerText = "睇賽果 ➔";
+            nextBtn.innerText = t('nextResults');
         } else if (isLastPlayer) {
-            nextBtn.innerText = mode === 'solo' || mode === 'survival' ? "下一題 ➔" : "進入下一回合 ➔";
+            nextBtn.innerText = mode === 'solo' || mode === 'survival' ? t('nextQuestion') : t('nextRound');
         } else {
-            nextBtn.innerText = `傳給 ${players[currentPlayerIndex + 1].name} ➔`;
+            nextBtn.innerText = t('nextPass', players[currentPlayerIndex + 1].name);
         }
         
         nextBtn.classList.remove("hidden");
@@ -1641,15 +1861,15 @@ async function playRound() {
         leaderboardDiv.innerHTML = "";
         
         if (mode === 'survival') {
-            endTitle.innerText = "🔥 生存挑戰結束！";
+            endTitle.innerText = t('endTitleSurvival');
             endTitle.style.color = "#ff4d4d";
             let p = players[0];
             let item = document.createElement("div");
             item.className = "leaderboard-item";
-            item.innerHTML = `<span>🌟 生存題數: <b>${currentRound - 1} 題</b></span> <span>${p.score} 分</span>`;
+            item.innerHTML = `<span>${t('survivalResult', currentRound - 1)}</span> <span>${t('pointsLabel', p.score)}</span>`;
             leaderboardDiv.appendChild(item);
         } else {
-            endTitle.innerText = "🏆 賽果出爐！";
+            endTitle.innerText = t('endTitleNormal');
             endTitle.style.color = "#4CAF50";
             let sortedPlayers = [...players].sort((a, b) => b.score - a.score);
             let medals = ["🥇", "🥈", "🥉", "👏"];
@@ -1657,7 +1877,7 @@ async function playRound() {
                 let item = document.createElement("div");
                 item.className = "leaderboard-item";
                 let rankSymbol = mode === 'solo' ? "🌟" : (medals[index] || "👏");
-                item.innerHTML = `<span>${rankSymbol} ${player.name}</span> <span>${player.score} 分</span>`;
+                item.innerHTML = `<span>${rankSymbol} ${player.name}</span> <span>${t('pointsLabel', player.score)}</span>`;
                 leaderboardDiv.appendChild(item);
             });
         }
