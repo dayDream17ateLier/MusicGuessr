@@ -1322,10 +1322,8 @@
         }, 100);
     }
 
-    function useAiLifeline() {
-        const currentPlayer = players[currentPlayerIndex];
-        if (currentPlayer.aiUsed) return;
-        currentPlayer.aiUsed = true;
+function useAiLifeline() {
+        // 直接停用當前題目嘅 AI 按鈕，防止瘋狂撳，但唔會扣玩家全局次數
         document.getElementById("lifeline-ai-btn").disabled = true;
         
         const optionButtons = document.querySelectorAll(".option-btn");
@@ -1384,10 +1382,10 @@ async function playRound() {
         }
         document.getElementById("score-display").innerText = `分數: ${currentPlayer.score}`;
         
-        document.getElementById("lifeline-ai-btn").disabled = currentPlayer.aiUsed;
+        document.getElementById("lifeline-ai-btn").disabled = false;
         document.getElementById("lifeline-time-btn").disabled = currentPlayer.timeUsed;
         document.getElementById("lifeline-result").classList.add("hidden");
-
+    
         const comboDiv = document.getElementById("combo-display");
         if (currentPlayer.combo >= 2) {
             let fireIcon = currentPlayer.combo >= 3 ? '🔥' : '✨';
