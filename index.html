@@ -1,36 +1,44 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🎶 估歌派對 MusicGuessr</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
     <style>
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
-            background: radial-gradient(circle at 50% 0%, #2a2a35 0%, #121212 70%); /* 加入微漸變背景 */
+            font-family: 'Poppins', -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+            background: radial-gradient(circle at 50% 0%, #1e1e26 0%, #0d0d11 100%);
             color: white;
             text-align: center;
             padding: 20px;
             margin: 0;
             min-height: 100vh;
         }
+
+        /* 2. 懸浮磨砂玻璃貨架 + 智能霓虹外發光邊框 */
+        :root {
+            --tg-rgb: 177, 66, 255; /* 預設混合色紫色 RGB */
+        }
         .container {
             max-width: 450px;
             margin: 20px auto;
-            background: rgba(30, 30, 30, 0.6); /* 半透明底色 */
-            backdrop-filter: blur(12px); /* 毛玻璃模糊效果 */
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1); /* 微光邊框 */
+            background: rgba(30, 30, 35, 0.65); 
+            backdrop-filter: blur(20px); 
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08); 
             padding: 30px;
-            border-radius: 20px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.1);
+            border-radius: 24px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6), 0 0 30px rgba(var(--tg-rgb), 0.15);
             position: relative;
             z-index: 10;
+            transition: box-shadow 0.5s ease;
         }
         #main-title { transition: 0.3s; margin-top: 0; font-size: 28px; }
         
-        /* 動態主題顏色 */
+        /* 動態主題文字顏色 */
         .color-anime { color: #ff4500 !important; }
         .color-jpop { color: #00d2ff !important; }
         .color-canto { color: #ffb703 !important; }
@@ -38,81 +46,141 @@
         .color-kpop { color: #ff007f !important; }
         .color-meme { color: #8a2be2 !important; }
         .color-survival { color: #ff4d4d !important; }
-        .color-mixed { color: #b142ff !important; } /* 多選大亂鬥專屬顏色 */
-        
-        /* --- 多選題庫 UI 大升級 --- */
+        .color-mixed { color: #b142ff !important; } 
+
+        /* 3. 「分區摺疊」手風琴機制樣式 */
+        .accordion-item { 
+            border-radius: 14px; 
+            margin-bottom: 10px; 
+            overflow: hidden; 
+            background: rgba(0, 0, 0, 0.2); 
+            border: 1px solid rgba(255,255,255,0.03);
+        }
+        .accordion-header { 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            padding: 12px 16px; 
+            background: rgba(255,255,255,0.02); 
+            cursor: pointer; 
+            user-select: none;
+            font-weight: 600; 
+            font-size: 14px; 
+            color: #ccc;
+            transition: background 0.2s, color 0.2s;
+        }
+        .accordion-header:hover { background: rgba(255,255,255,0.06); color: #fff; }
+        .accordion-header .material-icons-round { transition: transform 0.3s; font-size: 20px; color: #777; }
+        .accordion-content { 
+            max-height: 0; 
+            padding: 0 12px; 
+            overflow: hidden; 
+            transition: max-height 0.3s cubic-bezier(0, 1, 0, 1), padding 0.3s ease; 
+            display: flex; 
+            flex-wrap: wrap; 
+            gap: 8px; 
+        }
+        .accordion-item.active { border-color: rgba(255,255,255,0.08); }
+        .accordion-item.active .accordion-content { max-height: 500px; padding: 14px 12px; }
+        .accordion-item.active .accordion-header { background: rgba(255,255,255,0.04); color: #fff; }
+        .accordion-item.active .accordion-header .material-icons-round { transform: rotate(180deg); }
+
+        /* 4. 雲朵流體排版標籤 + 底部滾動漸變淡出遮罩 */
+        .category-wrapper {
+            position: relative;
+            background: #16161a;
+            border-radius: 16px;
+            padding: 10px;
+            -webkit-mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
+            mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
+        }
         .category-grid {
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
-            max-height: 250px;
+            gap: 8px;
+            max-height: 260px;
             overflow-y: auto;
-            padding: 5px;
+            padding-bottom: 25px; 
+            padding-right: 2px;
         }
         
-        /* 靚靚 Scrollbar */
-        .category-grid::-webkit-scrollbar { width: 6px; }
-        .category-grid::-webkit-scrollbar-track { background: #1a1a1a; border-radius: 10px; }
-        .category-grid::-webkit-scrollbar-thumb { background: #555; border-radius: 10px; }
-        .category-grid::-webkit-scrollbar-thumb:hover { background: #b142ff; }
+        /* 靚靚卷軸 Scrollbar */
+        .category-grid::-webkit-scrollbar { width: 5px; }
+        .category-grid::-webkit-scrollbar-track { background: transparent; }
+        .category-grid::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
+        .category-grid::-webkit-scrollbar-thumb:hover { background: #666; }
 
+        /* 「雲朵流體」膠囊標籤 (自動伸縮長短) */
         .category-label {
-            display: flex;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
-            background: #222;
-            border: 2px solid #444;
-            padding: 10px 15px;
-            border-radius: 25px; /* 膠囊形狀 */
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 8px 14px;
+            border-radius: 20px;
             font-size: 13px;
-            font-weight: bold;
+            font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-            color: #aaa;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            color: #fff;
             user-select: none;
-            flex-grow: 1; 
+            flex: 1 1 auto; 
+            width: max-content;
             text-align: center;
+            opacity: 0.45; /* 未選中時淡出退到背景 */
         }
-        
-        /* 隱藏原本核突嘅 Checkbox 方格 */
-        .category-label input { display: none; }
-        
-        /* 滑鼠懸停浮起特效 */
-        .category-label:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.3); border-color: #666;}
+        .category-label input { display: none; } /* 隱藏原生 Checkbox */
+        .category-label:hover { transform: translateY(-1.5px); opacity: 0.75; border-color: rgba(255,255,255,0.2); }
 
-        /* 根據曲風加入專屬發光顏色 */
-        .cat-meme:has(input:checked) { border-color: #8a2be2; background-color: rgba(138, 43, 226, 0.15); color: #fff; box-shadow: 0 0 12px rgba(138, 43, 226, 0.4); }
-        .cat-anime:has(input:checked) { border-color: #ff4500; background-color: rgba(255, 69, 0, 0.15); color: #fff; box-shadow: 0 0 12px rgba(255, 69, 0, 0.4); }
-        .cat-jpop:has(input:checked) { border-color: #00d2ff; background-color: rgba(0, 210, 255, 0.15); color: #fff; box-shadow: 0 0 12px rgba(0, 210, 255, 0.4); }
-        .cat-canto:has(input:checked) { border-color: #ffb703; background-color: rgba(255, 183, 3, 0.15); color: #fff; box-shadow: 0 0 12px rgba(255, 183, 3, 0.4); }
-        .cat-tw:has(input:checked) { border-color: #ff9800; background-color: rgba(255, 152, 0, 0.15); color: #fff; box-shadow: 0 0 12px rgba(255, 152, 0, 0.4); }
-        .cat-kpop:has(input:checked) { border-color: #ff007f; background-color: rgba(255, 0, 127, 0.15); color: #fff; box-shadow: 0 0 12px rgba(255, 0, 127, 0.4); }
-        
+        /* 已選中標籤：點亮並淡淡填滿專屬微弱漸變底色 */
+        .cat-meme:has(input:checked) { opacity: 1; border-color: #8a2be2; background: linear-gradient(145deg, rgba(138, 43, 226, 0.22), rgba(138, 43, 226, 0.05)); box-shadow: 0 0 10px rgba(138, 43, 226, 0.25); }
+        .cat-anime:has(input:checked) { opacity: 1; border-color: #ff4500; background: linear-gradient(145deg, rgba(255, 69, 0, 0.22), rgba(255, 69, 0, 0.05)); box-shadow: 0 0 10px rgba(255, 69, 0, 0.25); }
+        .cat-jpop:has(input:checked) { opacity: 1; border-color: #00d2ff; background: linear-gradient(145deg, rgba(0, 210, 255, 0.22), rgba(0, 210, 255, 0.05)); box-shadow: 0 0 10px rgba(0, 210, 255, 0.25); }
+        .cat-canto:has(input:checked) { opacity: 1; border-color: #ffb703; background: linear-gradient(145deg, rgba(255, 183, 3, 0.22), rgba(255, 183, 3, 0.05)); box-shadow: 0 0 10px rgba(255, 183, 3, 0.25); }
+        .cat-tw:has(input:checked) { opacity: 1; border-color: #ff9800; background: linear-gradient(145deg, rgba(255, 152, 0, 0.22), rgba(255, 152, 0, 0.05)); box-shadow: 0 0 10px rgba(255, 152, 0, 0.25); }
+        .cat-kpop:has(input:checked) { opacity: 1; border-color: #ff007f; background: linear-gradient(145deg, rgba(255, 0, 127, 0.22), rgba(255, 0, 127, 0.05)); box-shadow: 0 0 10px rgba(255, 0, 127, 0.25); }
+
+        /* 5. 模式與題數：橫排 Tab Buttons 粒粒按鈕設計 */
+        .tab-container { display: flex; gap: 5px; background: #141417; padding: 4px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.03); }
+        .tab-btn {
+            flex: 1; padding: 10px 6px; background: transparent; border: none; color: #777;
+            font-size: 13px; font-weight: 700; border-radius: 8px; cursor: pointer; transition: all 0.2s ease;
+            display: flex; align-items: center; justify-content: center; gap: 4px;
+        }
+        .tab-btn .material-icons-round { font-size: 17px; }
+        .tab-btn:hover:not(.active) { color: #bbb; background: rgba(255,255,255,0.02); }
+        .tab-btn.active { background: #2a2a32; color: white; box-shadow: 0 3px 10px rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.05); }
+
+        /* 6. 大堂基礎佈局與設定面板 */
         .hidden { display: none !important; }
-
         .setup-group {
             display: flex;
             flex-direction: column;
             gap: 10px;
             margin-bottom: 20px;
-            background: #2a2a2a;
-            padding: 15px;
-            border-radius: 10px;
+            background: rgba(40, 40, 45, 0.4);
+            padding: 16px;
+            border-radius: 14px;
             text-align: left;
+            border: 1px solid rgba(255,255,255,0.03);
         }
-        .setup-group label { font-weight: bold; color: #ddd; }
-        .setup-group select, .setup-group input {
+        .setup-group label { font-weight: 700; color: #ddd; font-size: 14px; }
+        .setup-group input {
             padding: 12px;
-            font-size: 16px;
-            border-radius: 8px;
-            border: 1px solid #555;
-            background-color: #1a1a1a;
+            font-size: 15px;
+            border-radius: 10px;
+            border: 1px solid #444;
+            background-color: #141417;
             color: white;
             width: 100%;
             box-sizing: border-box;
             outline: none;
+            transition: border-color 0.2s;
         }
+        .setup-group input:focus { border-color: #666; }
 
+        /* 7. 遊戲進行畫面樣式 (計時、問題、狀態列) */
         .status-bar {
             display: flex;
             justify-content: space-between;
@@ -122,7 +190,6 @@
             border-bottom: 1px solid #333;
             padding-bottom: 10px;
         }
-        
         .turn-indicator {
             font-size: 20px;
             color: #fff;
@@ -132,7 +199,6 @@
             padding: 10px;
             border-radius: 10px;
         }
-        
         .combo-text {
             font-size: 18px;
             font-weight: bold;
@@ -145,9 +211,28 @@
             50% { transform: scale(1.2); }
             100% { transform: scale(1); opacity: 1; }
         }
-
         .question-text { font-size: 18px; margin-bottom: 15px; font-weight: bold; line-height: 1.5; min-height: 60px; }
         
+        /* 倒數計時條 */
+        .timer-container {
+            width: 100%;
+            height: 12px;
+            background-color: #333;
+            border-radius: 10px;
+            margin: 15px 0 25px 0;
+            overflow: hidden;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);
+        }
+        .timer-bar {
+            height: 100%;
+            width: 100%;
+            background-color: #4CAF50; 
+            border-radius: 10px;
+            transition: width 0.1s linear, background-color 0.3s;
+        }
+        .audio-player { width: 100%; margin-bottom: 20px; }
+
+        /* 8. 救命錦囊機制 UI */
         .lifeline-box {
             display: flex;
             justify-content: center;
@@ -168,7 +253,6 @@
         }
         .lifeline-btn:hover:not(:disabled) { background-color: #666; }
         .lifeline-btn:disabled { opacity: 0.3; cursor: not-allowed; border-color: #333; }
-        
         #token-display {
             font-size: 14px;
             font-weight: bold;
@@ -176,7 +260,6 @@
             margin-bottom: 15px;
             text-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
         }
-        
         #lifeline-result {
             background-color: rgba(255, 255, 255, 0.05);
             border-radius: 8px;
@@ -187,102 +270,117 @@
             line-height: 1.4;
         }
 
-        .timer-container {
-            width: 100%;
-            height: 12px;
-            background-color: #333;
-            border-radius: 10px;
-            margin: 15px 0 25px 0;
-            overflow: hidden;
-            box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);
-        }
-        .timer-bar {
-            height: 100%;
-            width: 100%;
-            background-color: #4CAF50; 
-            border-radius: 10px;
-            transition: width 0.1s linear, background-color 0.3s;
-        }
-
-        .audio-player { width: 100%; margin-bottom: 20px; }
+        /* 9. 四個選項按鈕 (加入懸停與震動脈衝動畫) */
         .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
-
         .option-btn {
-            background: linear-gradient(145deg, #2a2a2a, #333);
+            background: linear-gradient(145deg, #24242a, #2f2f36);
             color: white;
-            border: 1px solid #444;
+            border: 1px solid rgba(255,255,255,0.06);
             padding: 16px 12px;
-            font-size: 14.5px;
-            border-radius: 12px;
+            font-size: 14px;
+            border-radius: 14px;
             cursor: pointer;
             transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
             word-wrap: break-word;
-            font-weight: bold;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            font-weight: 700;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
         }
         .option-btn:hover:not(:disabled) { 
-            transform: translateY(-3px); 
-            box-shadow: 0 6px 12px rgba(0,0,0,0.5); 
-            border-color: #777;
-            background: linear-gradient(145deg, #333, #444);
+            transform: translateY(-2.5px); 
+            box-shadow: 0 8px 16px rgba(0,0,0,0.5); 
+            border-color: rgba(255,255,255,0.2);
+            background: linear-gradient(145deg, #2f2f36, #383840);
         }
-        .option-btn:active:not(:disabled) { transform: translateY(1px); }
+        .option-btn:active:not(:disabled) { transform: translateY(0.5px); }
         
-        .btn-correct { background-color: #4CAF50 !important; border-color: #4CAF50 !important; }
-        .btn-wrong { background-color: #ff4d4d !important; border-color: #ff4d4d !important; }
+        /* 答錯左右震動 (Shake) 與 答啱波浪脈衝 (Pulse) */
+        .shake-anim { animation: shakeEffect 0.4s ease-in-out; }
+        @keyframes shakeEffect {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-6px); }
+            40%, 80% { transform: translateX(6px); }
+        }
+        .pulse-anim { animation: pulseEffect 0.6s cubic-bezier(0.165, 0.84, 0.44, 1); }
+        @keyframes pulseEffect {
+            0% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.8); transform: scale(1); }
+            50% { transform: scale(1.03); }
+            100% { box-shadow: 0 0 0 15px rgba(76, 175, 80, 0); transform: scale(1); }
+        }
+        .btn-correct { background: #4CAF50 !important; border-color: #4CAF50 !important; box-shadow: 0 4px 15px rgba(76,175,80,0.4) !important; }
+        .btn-wrong { background: #ff4d4d !important; border-color: #ff4d4d !important; box-shadow: 0 4px 15px rgba(255,77,77,0.4) !important; }
         
+        /* 10. 底部連結、主按鈕、排行榜 */
         .apple-music-link-btn {
             background-color: #fa243c;
             color: white;
             text-decoration: none;
             padding: 12px 25px;
             border-radius: 25px;
-            font-size: 16px;
+            font-size: 15px;
             font-weight: bold;
             display: inline-block;
             margin-bottom: 20px;
             transition: 0.3s;
-            box-shadow: 0 4px 10px rgba(250, 36, 60, 0.4);
+            box-shadow: 0 5px 15px rgba(250, 36, 60, 0.3);
         }
-        .apple-music-link-btn:hover { background-color: #d11d31; }
+        .apple-music-link-btn:hover { background-color: #d11d31; transform: translateY(-1px); }
         
+        /* 「智能充能」主按鈕基礎狀態 (未選曲庫時呈暗灰鎖定狀態) */
+        #start-btn { 
+            opacity: 0.4; 
+            pointer-events: none; 
+            transform: scale(0.98); 
+            background: #2a2a30; 
+            color: #666; 
+            border: 1px solid #3a3a42;
+            box-shadow: none;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+        }
+        #start-btn.charged { 
+            opacity: 1; 
+            pointer-events: auto; 
+            transform: scale(1); 
+            border: 1px solid rgba(255,255,255,0.1);
+        }
         .primary-btn {
             background-color: #fff;
             border: none;
-            font-size: 20px;
+            font-size: 19px;
             padding: 15px 30px;
             border-radius: 30px;
-            font-weight: bold;
+            font-weight: 800;
             width: 100%;
             margin-top: 10px;
             color: #121212;
-            transition: 0.3s;
             cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
         }
-        .btn-secondary { background-color: #555; color: white; }
-        .btn-secondary:hover { background-color: #666; }
+        .btn-secondary { background-color: #444; color: #ddd; border: 1px solid #555; }
+        .btn-secondary:hover { background-color: #555; color: #fff; transform: translateY(-1px); }
 
-        #loading-msg { color: #ffeb3b; font-size: 14px; margin-bottom: 10px; }
-        .leaderboard { text-align: left; background: #2a2a2a; padding: 20px; border-radius: 10px; margin-top: 20px; }
-        .leaderboard-item { font-size: 20px; padding: 10px 0; border-bottom: 1px solid #444; display: flex; justify-content: space-between; }
+        #loading-msg { color: #ffeb3b; font-size: 14px; margin-bottom: 10px; font-weight: 600; }
+        .leaderboard { text-align: left; background: rgba(0,0,0,0.2); padding: 20px; border-radius: 14px; margin-top: 20px; border: 1px solid rgba(255,255,255,0.03); }
+        .leaderboard-item { font-size: 18px; padding: 12px 0; border-bottom: 1px solid #2a2a30; display: flex; justify-content: space-between; font-weight: 600; }
         .leaderboard-item:last-child { border-bottom: none; }
 
-        /* Language Toggle */
+        /* 語言切換按鈕 */
         .lang-toggle {
             position: absolute;
             top: 15px;
             right: 15px;
-            background: #333;
-            border: 1px solid #555;
-            color: #ddd;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.15);
+            color: #ccc;
             padding: 6px 14px;
             border-radius: 20px;
-            font-size: 13px;
+            font-size: 12px;
+            font-weight: bold;
             cursor: pointer;
             transition: 0.2s;
             z-index: 100;
         }
-        .lang-toggle:hover { background: #555; color: #fff; }
+        .lang-toggle:hover { background: rgba(255,255,255,0.15); color: #fff; border-color: rgba(255,255,255,0.3); }
+        .icon-align { display: inline-flex; align-items: center; vertical-align: middle; gap: 4px; }
     </style>
 </head>
 <body>
@@ -293,53 +391,87 @@
 
     <div id="start-screen">
         <div class="setup-group">
-            <label data-i18n="labelCategory">🌍 選擇專屬曲庫</label>
-            <div class="category-grid" id="category-grid">
-                <label class="category-label cat-meme"><input type="checkbox" class="cat-checkbox" value="meme" onchange="updateTheme()"> 🤡 <span data-i18n="catMeme">迷因大挑戰</span></label>
-                <label class="category-label cat-anime"><input type="checkbox" class="cat-checkbox" value="anime" onchange="updateTheme()"> 🔰 <span data-i18n="catAnime">動漫專區 (80-26)</span></label>
-                <label class="category-label cat-jpop"><input type="checkbox" class="cat-checkbox" value="jpop00" onchange="updateTheme()"> 🇯🇵 J-Pop (00-09)</label>
-                <label class="category-label cat-jpop"><input type="checkbox" class="cat-checkbox" value="jpop10" onchange="updateTheme()"> 🇯🇵 J-Pop (10-19)</label>
-                <label class="category-label cat-jpop"><input type="checkbox" class="cat-checkbox" value="jpop20" onchange="updateTheme()"> 🇯🇵 J-Pop (20-26)</label>
-                <label class="category-label cat-canto"><input type="checkbox" class="cat-checkbox" value="canto80" onchange="updateTheme()"> 🇭🇰 Canto (80-89)</label>
-                <label class="category-label cat-canto"><input type="checkbox" class="cat-checkbox" value="canto90" onchange="updateTheme()"> 🇭🇰 Canto (90-99)</label>
-                <label class="category-label cat-canto"><input type="checkbox" class="cat-checkbox" value="canto00" onchange="updateTheme()"> 🇭🇰 Canto (00-09)</label>
-                <label class="category-label cat-canto"><input type="checkbox" class="cat-checkbox" value="canto10" onchange="updateTheme()"> 🇭🇰 Canto (10-19)</label>
-                <label class="category-label cat-canto"><input type="checkbox" class="cat-checkbox" value="canto20" onchange="updateTheme()"> 🇭🇰 Canto (20-26)</label>
-                <label class="category-label cat-tw"><input type="checkbox" class="cat-checkbox" value="tw00" onchange="updateTheme()"> 🇹🇼 TW-Pop (00-09)</label>
-                <label class="category-label cat-tw"><input type="checkbox" class="cat-checkbox" value="tw10" onchange="updateTheme()"> 🇹🇼 TW-Pop (10-19)</label>
-                <label class="category-label cat-tw"><input type="checkbox" class="cat-checkbox" value="tw20" onchange="updateTheme()"> 🇹🇼 TW-Pop (20-26)</label>
-                <label class="category-label cat-kpop"><input type="checkbox" class="cat-checkbox" value="kpop00" onchange="updateTheme()"> 🇰🇷 K-Pop (00-09)</label>
-                <label class="category-label cat-kpop"><input type="checkbox" class="cat-checkbox" value="kpop10" onchange="updateTheme()"> 🇰🇷 K-Pop (10-19)</label>
-                <label class="category-label cat-kpop"><input type="checkbox" class="cat-checkbox" value="kpop20" onchange="updateTheme()"> 🇰🇷 K-Pop (20-26)</label>
+            <<label><span class="icon-align"><i class="material-icons-round color-canto">library_music</i> <span data-i18n="labelCategory">🌍 選擇專屬曲庫</span></span></label>
+        <div class="category-wrapper">
+            <div class="category-grid">
+                
+                <div class="accordion-item active">
+                    <div class="accordion-header" onclick="toggleAccordion(this)"><span>✨ 特色綜合</span><i class="material-icons-round">expand_more</i></div>
+                    <div class="accordion-content">
+                        <label class="category-label cat-meme"><input type="checkbox" class="cat-checkbox" value="meme" onchange="updateTheme()"> 🤡 <span data-i18n="catMeme">迷因大挑戰</span></label>
+                        <label class="category-label cat-anime"><input type="checkbox" class="cat-checkbox" value="anime" onchange="updateTheme()"> 🔰 <span data-i18n="catAnime">動漫專區 (80-26)</span></label>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <div class="accordion-header" onclick="toggleAccordion(this)"><span>🇭🇰 廣東話流行 (Canto-Pop)</span><i class="material-icons-round">expand_more</i></div>
+                    <div class="accordion-content">
+                        <label class="category-label cat-canto"><input type="checkbox" class="cat-checkbox" value="canto80" onchange="updateTheme()"> 80s (80-89)</label>
+                        <label class="category-label cat-canto"><input type="checkbox" class="cat-checkbox" value="canto90" onchange="updateTheme()"> 90s (90-99)</label>
+                        <label class="category-label cat-canto"><input type="checkbox" class="cat-checkbox" value="canto00" onchange="updateTheme()"> 00s (00-09)</label>
+                        <label class="category-label cat-canto"><input type="checkbox" class="cat-checkbox" value="canto10" onchange="updateTheme()"> 10s (10-19)</label>
+                        <label class="category-label cat-canto"><input type="checkbox" class="cat-checkbox" value="canto20" onchange="updateTheme()"> 當代 (20-26)</label>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <div class="accordion-header" onclick="toggleAccordion(this)"><span>🇹🇼 台灣華語 (TW-Pop)</span><i class="material-icons-round">expand_more</i></div>
+                    <div class="accordion-content">
+                        <label class="category-label cat-tw"><input type="checkbox" class="cat-checkbox" value="tw00" onchange="updateTheme()"> 00s (00-09)</label>
+                        <label class="category-label cat-tw"><input type="checkbox" class="cat-checkbox" value="tw10" onchange="updateTheme()"> 10s (10-19)</label>
+                        <label class="category-label cat-tw"><input type="checkbox" class="cat-checkbox" value="tw20" onchange="updateTheme()"> 當代 (20-26)</label>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <div class="accordion-header" onclick="toggleAccordion(this)"><span>🇯🇵 日本流行 (J-Pop)</span><i class="material-icons-round">expand_more</i></div>
+                    <div class="accordion-content">
+                        <label class="category-label cat-jpop"><input type="checkbox" class="cat-checkbox" value="jpop00" onchange="updateTheme()"> 00s (00-09)</label>
+                        <label class="category-label cat-jpop"><input type="checkbox" class="cat-checkbox" value="jpop10" onchange="updateTheme()"> 10s (10-19)</label>
+                        <label class="category-label cat-jpop"><input type="checkbox" class="cat-checkbox" value="jpop20" onchange="updateTheme()"> 當代 (20-26)</label>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <div class="accordion-header" onclick="toggleAccordion(this)"><span>🇰🇷 韓國流行 (K-Pop)</span><i class="material-icons-round">expand_more</i></div>
+                    <div class="accordion-content">
+                        <label class="category-label cat-kpop"><input type="checkbox" class="cat-checkbox" value="kpop00" onchange="updateTheme()"> 00s (00-09)</label>
+                        <label class="category-label cat-kpop"><input type="checkbox" class="cat-checkbox" value="kpop10" onchange="updateTheme()"> 10s (10-19)</label>
+                        <label class="category-label cat-kpop"><input type="checkbox" class="cat-checkbox" value="kpop20" onchange="updateTheme()"> 當代 (20-26)</label>
+                    </div>
+                </div>
+
             </div>
         </div>
-        <div class="setup-group">
-            <label option data-i18n="labelMode">🎮 選擇遊玩模式</label>
-            <select id="mode-select" onchange="toggleModeUI()">
-                <option value="solo" data-i18n="modeSolo">👤 單人模式</option>
-                <option value="party" data-i18n="modeParty">👥 多人模式 (2-4人)</option>
-                <option value="survival" data-i18n="modeSurvival">🔥 生存模式</option>
-            </select>
-        </div>
-        
-        <div class="setup-group" id="round-group">
-            <label data-i18n="labelRounds">⏱️ 選擇題數 / 回合數</label>
-            <select id="round-select">
-                <option value="3" data-i18n="rounds3">3 回合 (熱身)</option>
-                <option value="5" selected data-i18n="rounds5">5 回合 (標準)</option>
-                <option value="10" data-i18n="rounds10">10 回合 (地獄)</option>
-            </select>
-        </div>
-        
-        <div class="setup-group hidden" id="party-inputs">
-            <label data-i18n="labelPlayerNames">📝 輸入玩家名字</label>
-            <input type="text" id="p1-name" data-i18n-placeholder="placeholderP1" placeholder="玩家 1 名字" value="玩家 A">
-            <input type="text" id="p2-name" data-i18n-placeholder="placeholderP2" placeholder="玩家 2 名字" value="玩家 B">
-            <input type="text" id="p3-name" data-i18n-placeholder="placeholderP3" placeholder="玩家 3 名字 (可留空)">
-            <input type="text" id="p4-name" placeholder="玩家 4 名字 (可留空)">
-        </div>
-        <button id="start-btn" class="primary-btn" onclick="startGame()" data-i18n="btnStart">開始遊戲</button>
     </div>
+
+    <div class="setup-group">
+        <label><span class="icon-align"><i class="material-icons-round color-jpop">videogame_asset</i> <span data-i18n="labelMode">🎮 選擇遊玩模式</span></span></label>
+        <div class="tab-container" id="mode-tabs">
+            <button class="tab-btn active" data-value="solo" onclick="selectTab('mode', this)"><i class="material-icons-round">person</i><span data-i18n="modeSolo">單人模式</span></button>
+            <button class="tab-btn" data-value="party" onclick="selectTab('mode', this)"><i class="material-icons-round">groups</i><span data-i18n="modeParty">多人模式</span></button>
+            <button class="tab-btn" data-value="survival" onclick="selectTab('mode', this)"><i class="material-icons-round">local_fire_department</i><span data-i18n="modeSurvival">生存模式</span></button>
+        </div>
+    </div>
+    
+    <div class="setup-group" id="round-group">
+        <label><span class="icon-align"><i class="material-icons-round color-anime">hourglass_top</i> <span data-i18n="labelRounds">⏱️ 選擇題數 / 回合數</span></span></label>
+        <div class="tab-container" id="round-tabs">
+            <button class="tab-btn" data-value="3" onclick="selectTab('round', this)"><span data-i18n="rounds3">3 回合</span></button>
+            <button class="tab-btn active" data-value="5" onclick="selectTab('round', this)"><span data-i18n="rounds5">5 回合</span></button>
+            <button class="tab-btn" data-value="10" onclick="selectTab('round', this)"><span data-i18n="rounds10">10 回合</span></button>
+        </div>
+    </div>
+    
+    <div class="setup-group hidden" id="party-inputs">
+        <label data-i18n="labelPlayerNames">📝 輸入玩家名字</label>
+        <input type="text" id="p1-name" data-i18n-placeholder="placeholderP1" placeholder="玩家 1 名字" value="玩家 A">
+        <input type="text" id="p2-name" data-i18n-placeholder="placeholderP2" placeholder="玩家 2 名字" value="玩家 B">
+        <input type="text" id="p3-name" data-i18n-placeholder="placeholderP3" placeholder="玩家 3 名字 (可留空)">
+        <input type="text" id="p4-name" placeholder="玩家 4 名字 (可留空)">
+    </div>
+    <button id="start-btn" class="primary-btn" onclick="startGame()" data-i18n="btnStart">開始遊戲</button>
+</div>
 
     <div id="game-screen" class="hidden">
         <div class="status-bar">
@@ -1385,37 +1517,93 @@
     let fiftyFiftyUsedThisRound = false;
     let timeUsedThisRound = false;
 
+    // --- 新增：手風琴摺疊面板開關 ---
+    function toggleAccordion(header) {
+        const item = header.parentElement;
+        item.classList.toggle('active');
+    }
+
+    // --- 新增：Tab 按鈕選擇全域狀態 ---
+    let activeMode = 'solo';
+    let activeRounds = 5;
+
+    function selectTab(type, btn) {
+        const container = btn.parentElement;
+        container.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        if (type === 'mode') {
+            activeMode = btn.getAttribute('data-value');
+            const partyInputs = document.getElementById('party-inputs');
+            const roundGroup = document.getElementById('round-group');
+            if (activeMode === 'party') {
+                partyInputs.classList.remove('hidden');
+                roundGroup.classList.remove('hidden');
+            } else if (activeMode === 'survival') {
+                partyInputs.classList.add('hidden');
+                roundGroup.classList.add('hidden');
+            } else {
+                partyInputs.classList.add('hidden');
+                roundGroup.classList.remove('hidden');
+            }
+        } else if (type === 'round') {
+            activeRounds = parseInt(btn.getAttribute('data-value'));
+        }
+        updateTheme();
+    }
+
     window.onload = function() { updateTheme(); applyLang(); };
 
     function updateTheme() {
         const checkboxes = document.querySelectorAll('.cat-checkbox:checked');
         selectedCategories = Array.from(checkboxes).map(cb => cb.value);
-        const mode = document.getElementById('mode-select').value;
+        const mode = activeMode; // 讀取橫排按鈕狀態
         const title = document.getElementById('main-title');
         const startBtn = document.getElementById('start-btn');
         const replayBtn = document.getElementById('replay-btn');
         
         title.className = "";
         
+        // 1. 動態計算容器的霓虹 Glow 顏色變數 (--tg-rgb)
         if (mode === 'survival') {
             title.className = 'color-survival';
             currentThemeColor = "#ff4d4d";
+            document.documentElement.style.setProperty('--tg-rgb', '255, 77, 77');
         } else if (selectedCategories.length === 0) {
             title.className = 'color-mixed';
             currentThemeColor = "#b142ff";
+            document.documentElement.style.setProperty('--tg-rgb', '177, 66, 255');
         } else if (selectedCategories.length === 1) {
             const theme = musicDatabase[selectedCategories[0]];
             title.className = theme.styleClass;
             currentThemeColor = theme.themeColor;
+            let hex = currentThemeColor.replace('#','');
+            let r = parseInt(hex.substring(0,2), 16), g = parseInt(hex.substring(2,4), 16), b = parseInt(hex.substring(4,6), 16);
+            document.documentElement.style.setProperty('--tg-rgb', `${r}, ${g}, ${b}`);
         } else {
             title.className = 'color-mixed';
             currentThemeColor = "#b142ff";
+            document.documentElement.style.setProperty('--tg-rgb', '177, 66, 255');
         }
 
-        startBtn.style.backgroundColor = currentThemeColor;
-        replayBtn.style.backgroundColor = currentThemeColor;
-        startBtn.style.color = currentThemeColor === "#ff4d4d" ? "white" : "#121212";
-        replayBtn.style.color = currentThemeColor === "#ff4d4d" ? "white" : "#121212";
+        // 2. 「智能充能」按鈕漸變色彩算法
+        if (selectedCategories.length === 0) {
+            startBtn.classList.remove('charged');
+            startBtn.style.background = "#2a2a30";
+            startBtn.style.color = "#666";
+        } else {
+            startBtn.classList.add('charged');
+            if (selectedCategories.length === 1) {
+                startBtn.style.background = currentThemeColor;
+            } else {
+                const color1 = musicDatabase[selectedCategories[0]].themeColor;
+                const color2 = musicDatabase[selectedCategories[1]].themeColor;
+                startBtn.style.background = `linear-gradient(135deg, ${color1}, ${color2})`;
+            }
+            startBtn.style.color = mode === 'survival' ? "white" : "#121212";
+        }
+        
+        if (replayBtn) replayBtn.style.backgroundColor = currentThemeColor;
     }
 
     function toggleModeUI() {
@@ -1448,15 +1636,15 @@
         const musicPlayer = document.getElementById("music-player");
         musicPlayer.volume = 0.3; 
 
-        const mode = document.getElementById('mode-select').value;
+        const mode = activeMode; // 改為讀取 Tab 按鈕數值
         isSurvivalDead = false;
 
         document.getElementById("next-btn").style.backgroundColor = currentThemeColor;
-        document.getElementById("next-btn").style.color = currentThemeColor === "#ff4d4d" ? "white" : "#121212";
+        document.getElementById("next-btn").style.color = mode === 'survival' ? "white" : "#121212";
         document.getElementById("next-btn").className = 'primary-btn hidden';
 
         let initialTokens = 0;
-        let playRounds = mode === 'survival' ? Infinity : parseInt(document.getElementById('round-select').value);
+        let playRounds = mode === 'survival' ? Infinity : activeRounds; // 改為讀取 Tab 按鈕數值
         if (mode === 'survival' || playRounds === 5) {
             initialTokens = 2;
         } else if (playRounds >= 10) {
@@ -1820,7 +2008,7 @@
         document.getElementById("lifeline-skip-btn").disabled = true;
 
         if (selectedId === correctId) {
-            clickedBtn.classList.add("btn-correct");
+            clickedBtn.classList.add("pulse-anim", "btn-correct");
             currentPlayer.combo++; 
 
             if (mode === 'survival' && currentPlayer.combo > 0 && currentPlayer.combo % 5 === 0) {
@@ -1870,7 +2058,7 @@
 
         } else {
             currentPlayer.combo = 0; 
-            clickedBtn.classList.add("btn-wrong");
+            clickedBtn.classList.add("shake-anim", "btn-wrong");
             
             if (mode === 'survival') {
                 isSurvivalDead = true;
