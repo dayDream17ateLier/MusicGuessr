@@ -35,6 +35,55 @@
         .color-kpop { color: #ff007f !important; }
         .color-meme { color: #8a2be2 !important; }
         .color-survival { color: #ff4d4d !important; }
+        .color-mixed { color: #b142ff !important; } /* 多選大亂鬥專屬顏色 */
+        
+        /* --- 多選題庫 UI 大升級 --- */
+        .category-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            max-height: 250px;
+            overflow-y: auto;
+            padding: 5px;
+        }
+        
+        /* 靚靚 Scrollbar */
+        .category-grid::-webkit-scrollbar { width: 6px; }
+        .category-grid::-webkit-scrollbar-track { background: #1a1a1a; border-radius: 10px; }
+        .category-grid::-webkit-scrollbar-thumb { background: #555; border-radius: 10px; }
+        .category-grid::-webkit-scrollbar-thumb:hover { background: #b142ff; }
+
+        .category-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #222;
+            border: 2px solid #444;
+            padding: 10px 15px;
+            border-radius: 25px; /* 膠囊形狀 */
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            color: #aaa;
+            user-select: none;
+            flex-grow: 1; 
+            text-align: center;
+        }
+        
+        /* 隱藏原本核突嘅 Checkbox 方格 */
+        .category-label input { display: none; }
+        
+        /* 滑鼠懸停浮起特效 */
+        .category-label:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.3); border-color: #666;}
+
+        /* 根據曲風加入專屬發光顏色 */
+        .cat-meme:has(input:checked) { border-color: #8a2be2; background-color: rgba(138, 43, 226, 0.15); color: #fff; box-shadow: 0 0 12px rgba(138, 43, 226, 0.4); }
+        .cat-anime:has(input:checked) { border-color: #ff4500; background-color: rgba(255, 69, 0, 0.15); color: #fff; box-shadow: 0 0 12px rgba(255, 69, 0, 0.4); }
+        .cat-jpop:has(input:checked) { border-color: #00d2ff; background-color: rgba(0, 210, 255, 0.15); color: #fff; box-shadow: 0 0 12px rgba(0, 210, 255, 0.4); }
+        .cat-canto:has(input:checked) { border-color: #ffb703; background-color: rgba(255, 183, 3, 0.15); color: #fff; box-shadow: 0 0 12px rgba(255, 183, 3, 0.4); }
+        .cat-tw:has(input:checked) { border-color: #ff9800; background-color: rgba(255, 152, 0, 0.15); color: #fff; box-shadow: 0 0 12px rgba(255, 152, 0, 0.4); }
+        .cat-kpop:has(input:checked) { border-color: #ff007f; background-color: rgba(255, 0, 127, 0.15); color: #fff; box-shadow: 0 0 12px rgba(255, 0, 127, 0.4); }
         
         .hidden { display: none !important; }
 
@@ -226,24 +275,24 @@
     <div id="start-screen">
         <div class="setup-group">
             <label data-i18n="labelCategory">🌍 選擇專屬曲庫</label>
-            <select id="category-select" onchange="updateTheme()">
-                <option value="meme">🤡 迷因大挑戰 (Meme Songs)</option>
-                <option value="anime">🔰 動漫專區</option>
-                <option value="jpop00">🇯🇵 J-Pop (2000-2009)</option>
-                <option value="jpop10">🇯🇵 J-Pop (2010-2019)</option>
-                <option value="jpop20">🇯🇵 J-Pop (2020-2026)</option>
-                <option value="canto80">🇭🇰 Canto-Pop (1980-1989)</option>
-                <option value="canto90">🇭🇰 Canto-Pop (1990-1999)</option>
-                <option value="canto00">🇭🇰 Canto-Pop (2000-2009)</option>
-                <option value="canto10">🇭🇰 Canto-Pop (2010-2019)</option>
-                <option value="canto20">🇭🇰 Canto-Pop (2020-2026)</option>
-                <option value="tw00">🇹🇼 TW-Pop (2000-2009)</option>
-                <option value="tw10">🇹🇼 TW-Pop (2010-2019)</option>
-                <option value="tw20">🇹🇼 TW-Pop (2020-2026)</option>
-                <option value="kpop00">🇰🇷 K-Pop (2000-2009)</option>
-                <option value="kpop10">🇰🇷 K-Pop (2010-2019)</option>
-                <option value="kpop20">🇰🇷 K-Pop (2020-2026)</option>
-            </select>
+            <div class="category-grid" id="category-grid">
+                <label class="category-label cat-meme"><input type="checkbox" class="cat-checkbox" value="meme" onchange="updateTheme()"> 🤡 迷因大挑戰</label>
+                <label class="category-label cat-anime"><input type="checkbox" class="cat-checkbox" value="anime" onchange="updateTheme()"> 🔰 動漫專區 (80-26)</label>
+                <label class="category-label cat-jpop"><input type="checkbox" class="cat-checkbox" value="jpop00" onchange="updateTheme()"> 🇯🇵 J-Pop (00-09)</label>
+                <label class="category-label cat-jpop"><input type="checkbox" class="cat-checkbox" value="jpop10" onchange="updateTheme()"> 🇯🇵 J-Pop (10-19)</label>
+                <label class="category-label cat-jpop"><input type="checkbox" class="cat-checkbox" value="jpop20" onchange="updateTheme()" checked> 🇯🇵 J-Pop (20-26)</label>
+                <label class="category-label cat-canto"><input type="checkbox" class="cat-checkbox" value="canto80" onchange="updateTheme()"> 🇭🇰 Canto (80-89)</label>
+                <label class="category-label cat-canto"><input type="checkbox" class="cat-checkbox" value="canto90" onchange="updateTheme()"> 🇭🇰 Canto (90-99)</label>
+                <label class="category-label cat-canto"><input type="checkbox" class="cat-checkbox" value="canto00" onchange="updateTheme()"> 🇭🇰 Canto (00-09)</label>
+                <label class="category-label cat-canto"><input type="checkbox" class="cat-checkbox" value="canto10" onchange="updateTheme()"> 🇭🇰 Canto (10-19)</label>
+                <label class="category-label cat-canto"><input type="checkbox" class="cat-checkbox" value="canto20" onchange="updateTheme()"> 🇭🇰 Canto (20-26)</label>
+                <label class="category-label cat-tw"><input type="checkbox" class="cat-checkbox" value="tw00" onchange="updateTheme()"> 🇹🇼 TW-Pop (00-09)</label>
+                <label class="category-label cat-tw"><input type="checkbox" class="cat-checkbox" value="tw10" onchange="updateTheme()"> 🇹🇼 TW-Pop (10-19)</label>
+                <label class="category-label cat-tw"><input type="checkbox" class="cat-checkbox" value="tw20" onchange="updateTheme()"> 🇹🇼 TW-Pop (20-26)</label>
+                <label class="category-label cat-kpop"><input type="checkbox" class="cat-checkbox" value="kpop00" onchange="updateTheme()"> 🇰🇷 K-Pop (00-09)</label>
+                <label class="category-label cat-kpop"><input type="checkbox" class="cat-checkbox" value="kpop10" onchange="updateTheme()"> 🇰🇷 K-Pop (10-19)</label>
+                <label class="category-label cat-kpop"><input type="checkbox" class="cat-checkbox" value="kpop20" onchange="updateTheme()"> 🇰🇷 K-Pop (20-26)</label>
+            </div>
         </div>
         <div class="setup-group">
             <label data-i18n="labelMode">🎮 選擇遊玩模式</label>
@@ -1360,18 +1409,21 @@
     let currentPlayerIndex = 0;
     let currentRound = 1;
     let maxRounds = 5;
-    let selectedCategory = 'jpop20';
+    let selectedCategories = []; // 改為陣列，支援多選
+    let currentThemeColor = "#b142ff"; // 預設大亂鬥顏色
 
     let timerInterval;
     let timeSpent = 0;
     let roundMaxTime = 20; 
     let isExtendedTime = false; 
-    let isSurvivalDead = false; 
+    let isSurvivalDead = false;
+    let retryCount = 0; 
 
     window.onload = function() { updateTheme(); applyLang(); };
 
     function updateTheme() {
-        const cat = document.getElementById('category-select').value;
+        const checkboxes = document.querySelectorAll('.cat-checkbox:checked');
+        selectedCategories = Array.from(checkboxes).map(cb => cb.value);
         const mode = document.getElementById('mode-select').value;
         const title = document.getElementById('main-title');
         const startBtn = document.getElementById('start-btn');
@@ -1381,18 +1433,23 @@
         
         if (mode === 'survival') {
             title.className = 'color-survival';
-            startBtn.style.backgroundColor = musicDatabase[cat].themeColor;
-            replayBtn.style.backgroundColor = "#ff4d4d";
-            replayBtn.style.color = "white";
-            return;
+            currentThemeColor = "#ff4d4d";
+        } else if (selectedCategories.length === 0) {
+            title.className = 'color-mixed';
+            currentThemeColor = "#b142ff";
+        } else if (selectedCategories.length === 1) {
+            const theme = musicDatabase[selectedCategories[0]];
+            title.className = theme.styleClass;
+            currentThemeColor = theme.themeColor;
+        } else {
+            title.className = 'color-mixed';
+            currentThemeColor = "#b142ff";
         }
 
-        const theme = musicDatabase[cat];
-        title.className = theme.styleClass;
-        startBtn.style.backgroundColor = theme.themeColor;
-        replayBtn.style.backgroundColor = theme.themeColor;
-        startBtn.style.color = "#121212";
-        replayBtn.style.color = "#121212";
+        startBtn.style.backgroundColor = currentThemeColor;
+        replayBtn.style.backgroundColor = currentThemeColor;
+        startBtn.style.color = currentThemeColor === "#ff4d4d" ? "white" : "#121212";
+        replayBtn.style.color = currentThemeColor === "#ff4d4d" ? "white" : "#121212";
     }
 
     function toggleModeUI() {
@@ -1414,18 +1471,22 @@
     }
 
     function startGame() {
-        selectedCategory = document.getElementById('category-select').value;
+        const checkboxes = document.querySelectorAll('.cat-checkbox:checked');
+        selectedCategories = Array.from(checkboxes).map(cb => cb.value);
+        
+        if (selectedCategories.length === 0) {
+            alert(currentLang === 'zh' ? "最少要選擇一個題庫先可以開始啊！" : "Please select at least one category!");
+            return;
+        }
+
         const mode = document.getElementById('mode-select').value;
         isSurvivalDead = false;
 
-        const themeColor = musicDatabase[selectedCategory].themeColor;
-        document.getElementById("next-btn").style.backgroundColor = themeColor;
-        document.getElementById("next-btn").style.color = "#121212";
+        document.getElementById("next-btn").style.backgroundColor = currentThemeColor;
+        document.getElementById("next-btn").style.color = currentThemeColor === "#ff4d4d" ? "white" : "#121212";
         document.getElementById("next-btn").className = 'primary-btn hidden';
 
         if (mode === 'survival') {
-            document.getElementById("next-btn").style.backgroundColor = "#ff4d4d";
-            document.getElementById("next-btn").style.color = "white";
             maxRounds = Infinity; 
             players = [{ name: t('defaultSurvivalName'), score: 0, combo: 0, aiUsed: false, timeUsed: false }];
         } else if (mode === 'solo') {
@@ -1481,9 +1542,7 @@
         return name.split(' (')[0].split(' -')[0].split('【')[0].trim();
     }
 
-    async function fetchTracksForThisQuestion(artistObj) {
-        const config = musicDatabase[selectedCategory];
-        // 增加 API limit 至 100 確保篩選後有足夠歌曲，加上 lang=zh_hk 強制轉換官方中/英譯名
+    async function fetchTracksForThisQuestion(artistObj, config) {
         const url = `https://itunes.apple.com/search?term=${encodeURIComponent(artistObj.search)}&country=${config.country}&media=music&entity=song&limit=100&lang=zh_hk`;
         try {
             const response = await fetch(url);
@@ -1493,10 +1552,8 @@
 
             data.results.forEach(track => {
                 if (track.previewUrl && track.releaseDate) {
-                    // 獲取發行年份
                     const releaseYear = new Date(track.releaseDate).getFullYear();
-                    
-                    // 年代過濾器 (Time Machine Filter) 嚴格把關
+                    // 年代過濾器嚴格把關
                     if (releaseYear >= config.minYear && releaseYear <= config.maxYear) {
                         let cleanName = cleanTrackName(track.trackName);
                         if (!seenNames.has(cleanName.toLowerCase())) {
@@ -1634,13 +1691,15 @@ async function playRound() {
         musicPlayer.classList.add("hidden");
         questionText.innerText = t('loadingMsg');
 
-        // 🎯 核心修正：區分「原版歌手模式」與「精準神曲模式」
-        const dbConfig = musicDatabase[selectedCategory];
-        const isSongMode = !!dbConfig.hitSongs; // 如果該曲庫有設定 hitSongs，就進入神曲模式
+        // 🎯 核心修正：從玩家已選嘅題庫中，隨機抽 1 個題庫出嚟
+        const randomCatKey = selectedCategories[Math.floor(Math.random() * selectedCategories.length)];
+        const dbConfig = musicDatabase[randomCatKey];
+        const isSongMode = !!dbConfig.hitSongs; 
         const currentPool = isSongMode ? dbConfig.hitSongs : dbConfig.artists;
 
         let randomItem = currentPool[Math.floor(Math.random() * currentPool.length)];
-        let tracks = await fetchTracksForThisQuestion(randomItem);
+        // 注意呢度加咗 dbConfig 參數
+        let tracks = await fetchTracksForThisQuestion(randomItem, dbConfig);
 
         if (tracks.length > 0) {
             retryCount = 0;
@@ -1834,7 +1893,6 @@ async function playRound() {
     function triggerConfetti() {
         var duration = 3000;
         var end = Date.now() + duration;
-        const currentThemeColor = musicDatabase[selectedCategory].themeColor;
 
         (function frame() {
             confetti({
