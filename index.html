@@ -4,341 +4,285 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🎶 估歌派對 MusicGuessr</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
     <style>
+        :root {
+            --theme-color: #00d2ff;
+            --theme-glow: rgba(0, 210, 255, 0.25);
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
-            background: radial-gradient(circle at 50% 0%, #2a2a35 0%, #121212 70%); /* 加入微漸變背景 */
+            font-family: 'Poppins', "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(-45deg, #0f0f1a, #121212, #1a0f1a, #0f171a);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
             color: white;
             text-align: center;
             padding: 20px;
             margin: 0;
             min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
         }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .bg-notes { position: fixed; top: 0; left: 0; width: 100%; height: 100%; overflow: hidden; z-index: 1; pointer-events: none; opacity: 0.15; }
+        .bg-notes .material-icons { position: absolute; font-size: 32px; animation: floatNote 12s linear infinite; }
+        .note1 { top: 15%; left: 10%; animation-delay: 0s; }
+        .note2 { top: 45%; right: 12%; animation-delay: 3s; font-size: 40px !important; }
+        .note3 { bottom: 20%; left: 15%; animation-delay: 6s; }
+        .note4 { bottom: 40%; right: 20%; animation-delay: 1s; }
+
+        @keyframes floatNote {
+            0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-80px) rotate(20deg); opacity: 0; }
+        }
+
         .container {
             max-width: 450px;
-            margin: 20px auto;
-            background: rgba(30, 30, 30, 0.6); /* 半透明底色 */
-            backdrop-filter: blur(12px); /* 毛玻璃模糊效果 */
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1); /* 微光邊框 */
+            margin: 40px auto;
+            background: rgba(30, 30, 30, 0.65);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
             padding: 30px;
-            border-radius: 20px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.1);
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 20px var(--theme-glow);
+            min-height: 400px;
             position: relative;
             z-index: 10;
+            transition: box-shadow 0.5s ease;
         }
-        #main-title { transition: 0.3s; margin-top: 0; font-size: 28px; }
+
+        #main-title { transition: 0.3s; margin-top: 0; font-size: 28px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; }
         
-        /* 動態主題顏色 */
         .color-anime { color: #ff4500 !important; }
         .color-jpop { color: #00d2ff !important; }
         .color-canto { color: #ffb703 !important; }
         .color-tw { color: #ff9800 !important; } 
         .color-kpop { color: #ff007f !important; }
-        .color-meme { color: #8a2be2 !important; }
+        .color-meme { color: #8a2be2 !important; } 
         .color-survival { color: #ff4d4d !important; }
-        .color-mixed { color: #b142ff !important; } /* 多選大亂鬥專屬顏色 */
-        
-        /* --- 多選題庫 UI 大升級 --- */
-        .category-grid {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            max-height: 250px;
-            overflow-y: auto;
-            padding: 5px;
-        }
-        
-        /* 靚靚 Scrollbar */
-        .category-grid::-webkit-scrollbar { width: 6px; }
-        .category-grid::-webkit-scrollbar-track { background: #1a1a1a; border-radius: 10px; }
-        .category-grid::-webkit-scrollbar-thumb { background: #555; border-radius: 10px; }
-        .category-grid::-webkit-scrollbar-thumb:hover { background: #b142ff; }
-
-        .category-label {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #222;
-            border: 2px solid #444;
-            padding: 10px 15px;
-            border-radius: 25px; /* 膠囊形狀 */
-            font-size: 13px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-            color: #aaa;
-            user-select: none;
-            flex-grow: 1; 
-            text-align: center;
-        }
-        
-        /* 隱藏原本核突嘅 Checkbox 方格 */
-        .category-label input { display: none; }
-        
-        /* 滑鼠懸停浮起特效 */
-        .category-label:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.3); border-color: #666;}
-
-        /* 根據曲風加入專屬發光顏色 */
-        .cat-meme:has(input:checked) { border-color: #8a2be2; background-color: rgba(138, 43, 226, 0.15); color: #fff; box-shadow: 0 0 12px rgba(138, 43, 226, 0.4); }
-        .cat-anime:has(input:checked) { border-color: #ff4500; background-color: rgba(255, 69, 0, 0.15); color: #fff; box-shadow: 0 0 12px rgba(255, 69, 0, 0.4); }
-        .cat-jpop:has(input:checked) { border-color: #00d2ff; background-color: rgba(0, 210, 255, 0.15); color: #fff; box-shadow: 0 0 12px rgba(0, 210, 255, 0.4); }
-        .cat-canto:has(input:checked) { border-color: #ffb703; background-color: rgba(255, 183, 3, 0.15); color: #fff; box-shadow: 0 0 12px rgba(255, 183, 3, 0.4); }
-        .cat-tw:has(input:checked) { border-color: #ff9800; background-color: rgba(255, 152, 0, 0.15); color: #fff; box-shadow: 0 0 12px rgba(255, 152, 0, 0.4); }
-        .cat-kpop:has(input:checked) { border-color: #ff007f; background-color: rgba(255, 0, 127, 0.15); color: #fff; box-shadow: 0 0 12px rgba(255, 0, 127, 0.4); }
+        .color-mixed { color: #b142ff !important; }
         
         .hidden { display: none !important; }
 
-        .setup-group {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-bottom: 20px;
-            background: #2a2a2a;
-            padding: 15px;
-            border-radius: 10px;
-            text-align: left;
-        }
-        .setup-group label { font-weight: bold; color: #ddd; }
-        .setup-group select, .setup-group input {
-            padding: 12px;
-            font-size: 16px;
-            border-radius: 8px;
-            border: 1px solid #555;
-            background-color: #1a1a1a;
-            color: white;
-            width: 100%;
-            box-sizing: border-box;
-            outline: none;
-        }
+        .setup-group { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; background: rgba(255, 255, 255, 0.04); padding: 18px; border-radius: 16px; text-align: left; border: 1px solid rgba(255, 255, 255, 0.03); }
+        .setup-group label { font-weight: 600; color: #eee; font-size: 15px; display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+        .setup-group label .material-icons { font-size: 18px; color: var(--theme-color); }
+        .setup-group input { padding: 12px; font-size: 16px; border-radius: 8px; border: 1px solid #555; background-color: #1a1a1a; color: white; width: 100%; box-sizing: border-box; outline: none; }
 
-        .status-bar {
-            display: flex;
-            justify-content: space-between;
-            font-size: 16px;
-            margin-bottom: 10px;
-            color: #aaa;
-            border-bottom: 1px solid #333;
-            padding-bottom: 10px;
-        }
-        
-        .turn-indicator {
-            font-size: 20px;
-            color: #fff;
-            font-weight: bold;
-            margin-bottom: 5px;
-            background-color: #333;
-            padding: 10px;
-            border-radius: 10px;
-        }
-        
-        .combo-text {
-            font-size: 18px;
-            font-weight: bold;
-            color: #ff9800;
-            margin-bottom: 15px;
-            animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-        @keyframes pop {
-            0% { transform: scale(0.5); opacity: 0; }
-            50% { transform: scale(1.2); }
-            100% { transform: scale(1); opacity: 1; }
-        }
+        .scroll-outer-wrapper { position: relative; width: 100%; }
+        .category-scroll-box { max-height: 260px; overflow-y: auto; padding-right: 4px; padding-bottom: 30px; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.1) transparent; }
+        .category-scroll-box::-webkit-scrollbar { width: 4px; }
+        .category-scroll-box::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
 
-        .question-text { font-size: 18px; margin-bottom: 15px; font-weight: bold; line-height: 1.5; min-height: 60px; }
-        
-        .lifeline-box {
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 10px;
-        }
-        .lifeline-btn {
-            background-color: #444;
-            border: 1px solid #666;
-            padding: 8px 12px;
-            font-size: 13px;
-            border-radius: 20px;
-            color: #fff;
-            cursor: pointer;
-            transition: 0.2s;
-            flex-grow: 1;
-        }
-        .lifeline-btn:hover:not(:disabled) { background-color: #666; }
-        .lifeline-btn:disabled { opacity: 0.3; cursor: not-allowed; border-color: #333; }
-        
-        #token-display {
-            font-size: 14px;
-            font-weight: bold;
-            color: #ffd700;
-            margin-bottom: 15px;
-            text-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
-        }
-        
-        #lifeline-result {
-            background-color: rgba(255, 255, 255, 0.05);
-            border-radius: 8px;
-            padding: 10px;
-            font-size: 13px;
-            margin-bottom: 15px;
-            text-align: left;
-            line-height: 1.4;
-        }
+        .scroll-fade-mask { position: absolute; bottom: 0; left: 0; width: 100%; height: 45px; background: linear-gradient(to top, rgba(26, 26, 36, 0.95), rgba(30, 30, 30, 0)); pointer-events: none; z-index: 12; transition: opacity 0.3s ease; opacity: 1; }
 
-        .timer-container {
-            width: 100%;
-            height: 12px;
-            background-color: #333;
-            border-radius: 10px;
-            margin: 15px 0 25px 0;
-            overflow: hidden;
-            box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);
-        }
-        .timer-bar {
-            height: 100%;
-            width: 100%;
-            background-color: #4CAF50; 
-            border-radius: 10px;
-            transition: width 0.1s linear, background-color 0.3s;
-        }
+        .group-header { font-size: 13px; color: rgba(255, 255, 255, 0.4); font-weight: 700; margin-top: 10px; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; border-left: 3px solid rgba(255, 255, 255, 0.15); padding: 6px 10px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; background: rgba(255, 255, 255, 0.01); border-radius: 6px; transition: all 0.25s ease; }
+        .group-header:hover { background: rgba(255, 255, 255, 0.05); color: #fff; }
+        .group-header .arrow-icon { font-size: 18px; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); color: #666; }
+        .group-header.active { border-left-color: var(--theme-color); color: #fff; background: rgba(255, 255, 255, 0.03); }
+        .group-header.active .arrow-icon { transform: rotate(180deg); color: var(--theme-color); }
+
+        .category-group-container { display: flex; flex-wrap: wrap; gap: 8px; padding: 4px 4px 12px 6px; max-height: 500px; overflow: hidden; opacity: 1; transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), padding 0.35s ease, opacity 0.25s; }
+        .category-group-container.collapsed { max-height: 0 !important; padding-top: 0 !important; padding-bottom: 0 !important; opacity: 0; pointer-events: none; }
+
+        .category-pill { flex: 0 1 auto; background-color: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.06); color: rgba(255, 255, 255, 0.35); padding: 8px 14px; border-radius: 20px; cursor: pointer; transition: all 0.2s ease; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
+        .category-pill:hover { color: rgba(255,255,255,0.8); background-color: rgba(255, 255, 255, 0.06); }
+        .category-pill.selected { opacity: 1 !important; }
+        .category-pill.selected.meme { border-color: #8a2be2; color: #fff; box-shadow: 0 0 10px rgba(138, 43, 226, 0.3); background: linear-gradient(135deg, rgba(138, 43, 226, 0.15), rgba(138, 43, 226, 0.02)); }
+        .category-pill.selected.anime { border-color: #ff4500; color: #fff; box-shadow: 0 0 10px rgba(255, 69, 0, 0.3); background: linear-gradient(135deg, rgba(255, 69, 0, 0.15), rgba(255, 69, 0, 0.02)); }
+        .category-pill.selected.jpop { border-color: #00d2ff; color: #fff; box-shadow: 0 0 10px rgba(0, 210, 255, 0.3); background: linear-gradient(135deg, rgba(0, 210, 255, 0.15), rgba(0, 210, 255, 0.02)); }
+        .category-pill.selected.canto { border-color: #ffb703; color: #fff; box-shadow: 0 0 10px rgba(255, 183, 3, 0.3); background: linear-gradient(135deg, rgba(255, 183, 3, 0.15), rgba(255, 183, 3, 0.02)); }
+        .category-pill.selected.tw { border-color: #ff9800; color: #fff; box-shadow: 0 0 10px rgba(255, 152, 0, 0.3); background: linear-gradient(135deg, rgba(255, 152, 0, 0.15), rgba(255, 152, 0, 0.02)); }
+        .category-pill.selected.kpop { border-color: #ff007f; color: #fff; box-shadow: 0 0 10px rgba(255, 0, 127, 0.3); background: linear-gradient(135deg, rgba(255, 0, 127, 0.15), rgba(255, 0, 127, 0.02)); }
+
+        .tab-grid { display: flex; gap: 10px; width: 100%; }
+        .tab-btn { flex: 1; background-color: #121212; border: 1px solid rgba(255, 255, 255, 0.15); color: #aaa; padding: 12px 8px; border-radius: 12px; cursor: pointer; transition: 0.2s ease; font-size: 13px; font-weight: 600; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+        .tab-btn .material-icons { font-size: 20px; }
+        .tab-btn:hover { background-color: #1c1c1e; color: #fff; transform: translateY(-2px); }
+        .tab-btn.active { background-color: var(--theme-color); color: #121212; border-color: var(--theme-color); box-shadow: 0 4px 12px var(--theme-glow); }
+
+        .status-bar { display: flex; justify-content: space-between; font-size: 15px; margin-bottom: 12px; color: #aaa; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 10px; font-weight: 600; }
+        .turn-indicator { font-size: 16px; color: #fff; font-weight: 600; margin-bottom: 12px; background-color: rgba(255, 255, 255, 0.08); padding: 10px; border-radius: 12px; display: flex; align-items: center; justify-content: center; gap: 6px; }
+        .combo-text { font-size: 18px; font-weight: 700; color: #ff9800; margin-bottom: 15px; animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+
+        .question-text { font-size: 18px; margin-bottom: 15px; font-weight: 600; line-height: 1.5; min-height: 60px; }
+        
+        #token-display { font-size: 14px; font-weight: bold; color: #ffd700; margin-bottom: 15px; text-shadow: 0 0 5px rgba(255, 215, 0, 0.5); }
+        
+        .lifeline-box { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; }
+        .lifeline-btn { background-color: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.1); padding: 10px 16px; font-size: 13px; border-radius: 20px; color: #fff; cursor: pointer; transition: 0.2s; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 4px; flex-grow: 1; }
+        .lifeline-btn .material-icons { font-size: 16px; }
+        .lifeline-btn:hover:not(:disabled) { background-color: rgba(255, 255, 255, 0.15); transform: translateY(-1px); }
+        .lifeline-btn:disabled { opacity: 0.2; cursor: not-allowed; border-color: #333; }
+        
+        #lifeline-result { background-color: rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 12px; font-size: 14px; margin-bottom: 15px; text-align: left; line-height: 1.5; border: 1px solid rgba(255,255,255,0.05); }
+
+        .timer-container { width: 100%; height: 10px; background-color: rgba(255, 255, 255, 0.1); border-radius: 10px; margin: 15px 0 25px 0; overflow: hidden; }
+        .timer-bar { height: 100%; width: 100%; background-color: #4CAF50; border-radius: 10px; transition: width 0.1s linear, background-color 0.3s; box-shadow: 0 0 10px var(--theme-color); }
 
         .audio-player { width: 100%; margin-bottom: 20px; }
         .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
 
-        .option-btn {
-            background: linear-gradient(145deg, #2a2a2a, #333);
-            color: white;
-            border: 1px solid #444;
-            padding: 16px 12px;
-            font-size: 14.5px;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
-            word-wrap: break-word;
-            font-weight: bold;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-        }
-        .option-btn:hover:not(:disabled) { 
-            transform: translateY(-3px); 
-            box-shadow: 0 6px 12px rgba(0,0,0,0.5); 
-            border-color: #777;
-            background: linear-gradient(145deg, #333, #444);
-        }
-        .option-btn:active:not(:disabled) { transform: translateY(1px); }
+        .option-btn { background: linear-gradient(145deg, #2a2a2a, #333); color: white; border: 1px solid rgba(255, 255, 255, 0.1); padding: 16px 12px; font-size: 14.5px; border-radius: 14px; cursor: pointer; transition: transform 0.1s, background-color 0.2s, border-color 0.2s; word-wrap: break-word; font-weight: 600; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .option-btn:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 6px 12px rgba(0,0,0,0.5); border-color: rgba(255,255,255,0.25); background: linear-gradient(145deg, #333, #444); }
+        .option-btn:active:not(:disabled) { transform: scale(0.98); }
+        .option-btn:disabled { opacity: 0.4; cursor: not-allowed; }
         
-        .btn-correct { background-color: #4CAF50 !important; border-color: #4CAF50 !important; }
-        .btn-wrong { background-color: #ff4d4d !important; border-color: #ff4d4d !important; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-6px); } 40%, 80% { transform: translateX(6px); } }
+        .shake { animation: shake 0.35s ease-in-out; background-color: #ff4d4d !important; border-color: #ff4d4d !important; box-shadow: 0 0 12px rgba(255, 77, 77, 0.5) !important; }
+        @keyframes pulse-wave { 0% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7); } 70% { box-shadow: 0 0 0 16px rgba(76, 175, 80, 0); } 100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); } }
+        .pulse-wave { animation: pulse-wave 0.6s ease-out; background-color: #4CAF50 !important; border-color: #4CAF50 !important; }
         
-        .apple-music-link-btn {
-            background-color: #fa243c;
-            color: white;
-            text-decoration: none;
-            padding: 12px 25px;
-            border-radius: 25px;
-            font-size: 16px;
-            font-weight: bold;
-            display: inline-block;
-            margin-bottom: 20px;
-            transition: 0.3s;
-            box-shadow: 0 4px 10px rgba(250, 36, 60, 0.4);
-        }
-        .apple-music-link-btn:hover { background-color: #d11d31; }
+        .btn-correct { background: #4CAF50 !important; border-color: #4CAF50 !important; box-shadow: 0 0 15px rgba(76, 175, 80, 0.6) !important; color: white !important; }
+        .btn-wrong { background: #ff4d4d !important; border-color: #ff4d4d !important; box-shadow: 0 0 15px rgba(255, 77, 77, 0.6) !important; color: white !important; }
         
-        .primary-btn {
-            background-color: #fff;
-            border: none;
-            font-size: 20px;
-            padding: 15px 30px;
-            border-radius: 30px;
-            font-weight: bold;
-            width: 100%;
-            margin-top: 10px;
-            color: #121212;
-            transition: 0.3s;
-            cursor: pointer;
-        }
-        .btn-secondary { background-color: #555; color: white; }
-        .btn-secondary:hover { background-color: #666; }
+        .apple-music-link-btn { background-color: #fa243c; color: white; text-decoration: none; padding: 12px 24px; border-radius: 30px; font-size: 15px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; margin-bottom: 20px; transition: 0.3s; box-shadow: 0 4px 12px rgba(250, 36, 60, 0.3); }
+        .apple-music-link-btn:hover { background-color: #d11d31; transform: translateY(-2px); }
+        
+        .primary-btn { background-color: #fff; border: none; font-size: 18px; padding: 14px 30px; border-radius: 30px; font-weight: 700; width: 100%; margin-top: 10px; color: #121212; transition: 0.3s; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+        .primary-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(255,255,255,0.2); }
+        .btn-secondary { background-color: rgba(255, 255, 255, 0.15); color: white; border: 1px solid rgba(255,255,255,0.1); }
+        .btn-secondary:hover { background-color: rgba(255, 255, 255, 0.25); }
 
-        #loading-msg { color: #ffeb3b; font-size: 14px; margin-bottom: 10px; }
-        .leaderboard { text-align: left; background: #2a2a2a; padding: 20px; border-radius: 10px; margin-top: 20px; }
-        .leaderboard-item { font-size: 20px; padding: 10px 0; border-bottom: 1px solid #444; display: flex; justify-content: space-between; }
+        #loading-msg { color: #ffeb3b; font-size: 14px; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; gap: 4px; }
+        .leaderboard { text-align: left; background: rgba(0, 0, 0, 0.2); padding: 20px; border-radius: 16px; margin-top: 20px; border: 1px solid rgba(255,255,255,0.05); }
+        .leaderboard-item { font-size: 18px; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; font-weight: 600; }
         .leaderboard-item:last-child { border-bottom: none; }
 
-        /* Language Toggle */
-        .lang-toggle {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            background: #333;
-            border: 1px solid #555;
-            color: #ddd;
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 13px;
-            cursor: pointer;
-            transition: 0.2s;
-            z-index: 100;
-        }
-        .lang-toggle:hover { background: #555; color: #fff; }
+        .lang-toggle { position: absolute; top: 15px; right: 15px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #ddd; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.2s; z-index: 100; }
+        .lang-toggle:hover { background: rgba(255,255,255,0.2); color: #fff; }
     </style>
-</head>
 <body>
+
+<div class="bg-notes">
+    <span class="material-icons note1">music_note</span>
+    <span class="material-icons note2">audiotrack</span>
+    <span class="material-icons note3">music_video</span>
+    <span class="material-icons note4">library_music</span>
+</div>
 
 <div class="container">
     <button class="lang-toggle" id="lang-toggle-btn" onclick="toggleLang()">EN</button>
-    <h1 id="main-title" class="color-jpop">🎶 <span id="app-title-text">估歌派對 MusicGuessr</span></h1>
+    <h1 id="main-title" class="color-jpop"><span class="material-icons" style="font-size:32px;">music_note</span><span id="app-title-text">估歌派對 MusicGuessr</span></h1>
 
     <div id="start-screen">
         <div class="setup-group">
-            <label data-i18n="labelCategory">🌍 選擇專屬曲庫</label>
-            <div class="category-grid" id="category-grid">
-                <label class="category-label cat-meme"><input type="checkbox" class="cat-checkbox" value="meme" onchange="updateTheme()"> 🤡 <span data-i18n="catMeme">迷因大挑戰</span></label>
-                <label class="category-label cat-anime"><input type="checkbox" class="cat-checkbox" value="anime" onchange="updateTheme()"> 🔰 <span data-i18n="catAnime">動漫專區 (80-26)</span></label>
-                <label class="category-label cat-jpop"><input type="checkbox" class="cat-checkbox" value="jpop00" onchange="updateTheme()"> 🇯🇵 J-Pop (00-09)</label>
-                <label class="category-label cat-jpop"><input type="checkbox" class="cat-checkbox" value="jpop10" onchange="updateTheme()"> 🇯🇵 J-Pop (10-19)</label>
-                <label class="category-label cat-jpop"><input type="checkbox" class="cat-checkbox" value="jpop20" onchange="updateTheme()"> 🇯🇵 J-Pop (20-26)</label>
-                <label class="category-label cat-canto"><input type="checkbox" class="cat-checkbox" value="canto80" onchange="updateTheme()"> 🇭🇰 Canto (80-89)</label>
-                <label class="category-label cat-canto"><input type="checkbox" class="cat-checkbox" value="canto90" onchange="updateTheme()"> 🇭🇰 Canto (90-99)</label>
-                <label class="category-label cat-canto"><input type="checkbox" class="cat-checkbox" value="canto00" onchange="updateTheme()"> 🇭🇰 Canto (00-09)</label>
-                <label class="category-label cat-canto"><input type="checkbox" class="cat-checkbox" value="canto10" onchange="updateTheme()"> 🇭🇰 Canto (10-19)</label>
-                <label class="category-label cat-canto"><input type="checkbox" class="cat-checkbox" value="canto20" onchange="updateTheme()"> 🇭🇰 Canto (20-26)</label>
-                <label class="category-label cat-tw"><input type="checkbox" class="cat-checkbox" value="tw00" onchange="updateTheme()"> 🇹🇼 TW-Pop (00-09)</label>
-                <label class="category-label cat-tw"><input type="checkbox" class="cat-checkbox" value="tw10" onchange="updateTheme()"> 🇹🇼 TW-Pop (10-19)</label>
-                <label class="category-label cat-tw"><input type="checkbox" class="cat-checkbox" value="tw20" onchange="updateTheme()"> 🇹🇼 TW-Pop (20-26)</label>
-                <label class="category-label cat-kpop"><input type="checkbox" class="cat-checkbox" value="kpop00" onchange="updateTheme()"> 🇰🇷 K-Pop (00-09)</label>
-                <label class="category-label cat-kpop"><input type="checkbox" class="cat-checkbox" value="kpop10" onchange="updateTheme()"> 🇰🇷 K-Pop (10-19)</label>
-                <label class="category-label cat-kpop"><input type="checkbox" class="cat-checkbox" value="kpop20" onchange="updateTheme()"> 🇰🇷 K-Pop (20-26)</label>
+            <label><span class="material-icons">public</span><span data-i18n="labelCategory">🌍 選擇專屬曲庫</span></label>
+            
+            <div class="scroll-outer-wrapper">
+                <div class="category-scroll-box" id="category-scroll-box">
+                    
+                    <div class="accordion-item">
+                        <div class="group-header" onclick="toggleAccordion('meme')">
+                            <span>✨ 特色綜合</span>
+                            <span class="material-icons arrow-icon">keyboard_arrow_down</span>
+                        </div>
+                        <div class="category-group-container collapsed" id="group-meme">
+                            <button class="category-pill meme" data-value="meme" onclick="toggleCategory('meme')">🤡 <span data-i18n="catMeme">迷因大挑戰</span></button>
+                            <button class="category-pill anime" data-value="anime" onclick="toggleCategory('anime')">🔰 <span data-i18n="catAnime">動漫專區 (80-26)</span></button>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item">
+                        <div class="group-header" onclick="toggleAccordion('canto')">
+                            <span>🇭🇰 Canto-Pop 香港流行</span>
+                            <span class="material-icons arrow-icon">keyboard_arrow_down</span>
+                        </div>
+                        <div class="category-group-container collapsed" id="group-canto">
+                            <button class="category-pill canto" data-value="canto80" onclick="toggleCategory('canto80')">80s 金曲</button>
+                            <button class="category-pill canto" data-value="canto90" onclick="toggleCategory('canto90')">90s 黃金</button>
+                            <button class="category-pill canto" data-value="canto00" onclick="toggleCategory('canto00')">00s 千禧</button>
+                            <button class="category-pill canto" data-value="canto10" onclick="toggleCategory('canto10')">10s 新世代</button>
+                            <button class="category-pill canto" data-value="canto20" onclick="toggleCategory('canto20')">20-26 當代</button>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item">
+                        <div class="group-header" onclick="toggleAccordion('tw')">
+                            <span>🇹🇼 TW-Pop 台灣華語</span>
+                            <span class="material-icons arrow-icon">keyboard_arrow_down</span>
+                        </div>
+                        <div class="category-group-container collapsed" id="group-tw">
+                            <button class="category-pill tw" data-value="tw00" onclick="toggleCategory('tw00')">00s 千禧</button>
+                            <button class="category-pill tw" data-value="tw10" onclick="toggleCategory('tw10')">10s 新世代</button>
+                            <button class="category-pill tw" data-value="tw20" onclick="toggleCategory('tw20')">20-26 當代</button>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item">
+                        <div class="group-header" onclick="toggleAccordion('jpop')">
+                            <span>🇯🇵 J-Pop 日本流行</span>
+                            <span class="material-icons arrow-icon">keyboard_arrow_down</span>
+                        </div>
+                        <div class="category-group-container collapsed" id="group-jpop">
+                            <button class="category-pill jpop" data-value="jpop00" onclick="toggleCategory('jpop00')">00s 千禧</button>
+                            <button class="category-pill jpop" data-value="jpop10" onclick="toggleCategory('jpop10')">10s 新世代</button>
+                            <button class="category-pill jpop" data-value="jpop20" onclick="toggleCategory('jpop20')">20-26 當代</button>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item">
+                        <div class="group-header" onclick="toggleAccordion('kpop')">
+                            <span>🇰🇷 K-Pop 韓國流行</span>
+                            <span class="material-icons arrow-icon">keyboard_arrow_down</span>
+                        </div>
+                        <div class="category-group-container collapsed" id="group-kpop">
+                            <button class="category-pill kpop" data-value="kpop00" onclick="toggleCategory('kpop00')">00s 二代</button>
+                            <button class="category-pill kpop" data-value="kpop10" onclick="toggleCategory('kpop10')">10s 三四代</button>
+                            <button class="category-pill kpop" data-value="kpop20" onclick="toggleCategory('kpop20')">20-26 五代</button>
+                        </div>
+                    </div>
+
+                </div>
+                <div class="scroll-fade-mask" id="scroll-mask"></div>
             </div>
         </div>
+
         <div class="setup-group">
-            <label option data-i18n="labelMode">🎮 選擇遊玩模式</label>
-            <select id="mode-select" onchange="toggleModeUI()">
-                <option value="solo" data-i18n="modeSolo">👤 單人模式</option>
-                <option value="party" data-i18n="modeParty">👥 多人模式 (2-4人)</option>
-                <option value="survival" data-i18n="modeSurvival">🔥 生存模式</option>
-            </select>
+            <label><span class="material-icons">sports_esports</span><span data-i18n="labelMode">🎮 選擇遊玩模式</span></label>
+            <div class="tab-grid" id="mode-tabs">
+                <button class="tab-btn active" data-value="solo" onclick="setMode('solo')">
+                    <span class="material-icons">person</span><span data-i18n="modeSolo">單人模式</span>
+                </button>
+                <button class="tab-btn" data-value="party" onclick="setMode('party')">
+                    <span class="material-icons">groups</span><span data-i18n="modeParty">多人模式</span>
+                </button>
+                <button class="tab-btn" data-value="survival" onclick="setMode('survival')">
+                    <span class="material-icons">local_fire_department</span><span data-i18n="modeSurvival">生存模式</span>
+                </button>
+            </div>
         </div>
         
         <div class="setup-group" id="round-group">
-            <label data-i18n="labelRounds">⏱️ 選擇題數 / 回合數</label>
-            <select id="round-select">
-                <option value="3" data-i18n="rounds3">3 回合 (熱身)</option>
-                <option value="5" selected data-i18n="rounds5">5 回合 (標準)</option>
-                <option value="10" data-i18n="rounds10">10 回合 (地獄)</option>
-            </select>
+            <label><span class="material-icons">timer</span><span data-i18n="labelRounds">⏱️ 選擇題數 / 回合數</span></label>
+            <div class="tab-grid" id="round-tabs">
+                <button class="tab-btn" data-value="3" onclick="setRounds(3)"><span data-i18n="rounds3">3 回合</span></button>
+                <button class="tab-btn active" data-value="5" onclick="setRounds(5)"><span data-i18n="rounds5">5 回合</span></button>
+                <button class="tab-btn" data-value="10" onclick="setRounds(10)"><span data-i18n="rounds10">10 回合</span></button>
+            </div>
         </div>
         
         <div class="setup-group hidden" id="party-inputs">
-            <label data-i18n="labelPlayerNames">📝 輸入玩家名字</label>
+            <label><span class="material-icons">edit</span><span data-i18n="labelPlayerNames">📝 輸入玩家名字</span></label>
             <input type="text" id="p1-name" data-i18n-placeholder="placeholderP1" placeholder="玩家 1 名字" value="玩家 A">
             <input type="text" id="p2-name" data-i18n-placeholder="placeholderP2" placeholder="玩家 2 名字" value="玩家 B">
             <input type="text" id="p3-name" data-i18n-placeholder="placeholderP3" placeholder="玩家 3 名字 (可留空)">
-            <input type="text" id="p4-name" placeholder="玩家 4 名字 (可留空)">
+            <input type="text" id="p4-name" data-i18n-placeholder="placeholderP4" placeholder="玩家 4 名字 (可留空)">
         </div>
-        <button id="start-btn" class="primary-btn" onclick="startGame()" data-i18n="btnStart">開始遊戲</button>
+        <button id="start-btn" class="primary-btn" onclick="startGame()"><span class="material-icons">play_arrow</span><span data-i18n="btnStart">開始遊戲</span></button>
     </div>
 
     <div id="game-screen" class="hidden">
@@ -348,21 +292,28 @@
         </div>
         
         <div class="turn-indicator hidden" id="turn-indicator">現在是 某某 的回合！</div>
-        
         <div id="token-display" class="hidden">🪙 錦囊代幣: 0</div>
         
         <div class="lifeline-box" id="lifeline-box">
-            <button class="lifeline-btn" id="lifeline-ai-btn" onclick="useAiLifeline()" data-i18n="btnAI">🤖 問 AI</button>
-            <button class="lifeline-btn" id="lifeline-5050-btn" onclick="use5050Lifeline()">½ 50/50</button>
-            <button class="lifeline-btn" id="lifeline-time-btn" onclick="useTimeLifeline()" data-i18n="btnTime">⏳ 加時</button>
-            <button class="lifeline-btn" id="lifeline-skip-btn" onclick="useSkipLifeline()">🔄 換歌</button>
+            <button class="lifeline-btn" id="lifeline-ai-btn" onclick="useAiLifeline()">
+                <span class="material-icons">smart_toy</span><span data-i18n="btnAI">🤖 問 AI</span>
+            </button>
+            <button class="lifeline-btn" id="lifeline-5050-btn" onclick="use5050Lifeline()">
+                <span class="material-icons">splitscreen</span>50/50
+            </button>
+            <button class="lifeline-btn" id="lifeline-time-btn" onclick="useTimeLifeline()">
+                <span class="material-icons">hourglass_empty</span><span data-i18n="btnTime">⏳ 加時</span>
+            </button>
+            <button class="lifeline-btn" id="lifeline-skip-btn" onclick="useSkipLifeline()">
+                <span class="material-icons">skip_next</span>換歌
+            </button>
         </div>
         <div id="lifeline-result" class="hidden"></div>
 
         <div id="combo-display" class="combo-text hidden"></div>
         
         <div class="question-text" id="question-text">...</div>
-        <div id="loading-msg" data-i18n="loadingMsg">正在尋找歌曲... (可能需要幾秒)</div>
+        <div id="loading-msg" data-i18n="loadingMsg"><span class="material-icons rotating">sync</span>正在尋找歌曲... (可能需要幾秒)</div>
         
         <div class="timer-container hidden" id="timer-container">
             <div class="timer-bar" id="timer-bar"></div>
@@ -373,7 +324,7 @@
         
         <div id="apple-link-container" class="hidden">
             <a id="apple-music-btn" href="#" target="_blank" class="apple-music-link-btn">
-                <span data-i18n="listenApple">🎵 在 Apple Music 聽完整版</span>
+                <span class="material-icons">audiotrack</span><span data-i18n="listenApple">🎵 在 Apple Music 聽完整版</span>
             </a>
         </div>
 
@@ -384,9 +335,13 @@
         <h2 id="end-title" style="color: #4CAF50;">🏆 遊戲結束！賽果出爐</h2>
         <div class="leaderboard" id="leaderboard"></div>
         
-        <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 25px;">
-            <button class="primary-btn" id="replay-btn" onclick="restartSameSettings()" data-i18n="btnReplay">🔄 原班人馬再玩一次</button>
-            <button class="primary-btn btn-secondary" onclick="location.reload()" data-i18n="btnHome">🏠 返回主頁</button>
+        <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 25px;">
+            <button class="primary-btn" id="replay-btn" onclick="restartSameSettings()">
+                <span class="material-icons">replay</span><span data-i18n="btnReplay">🔄 原班人馬再玩一次</span>
+            </button>
+            <button class="primary-btn btn-secondary" onclick="location.reload()">
+                <span class="material-icons">home</span><span data-i18n="btnHome">🏠 返回主頁重設</span>
+            </button>
         </div>
     </div>
 </div>
@@ -400,19 +355,19 @@
 
     const i18n = {
         zh: {
-            // UI Labels
-            appTitle: '🎶 估歌派對 MusicGuessr',
+            // UI Labels (已移除與 Icon 重複的 Emoji)
+            appTitle: '估歌派對 MusicGuessr',
             catMeme: '迷因大挑戰',
             catAnime: '動漫專區 (80-26)',
             langBtn: 'EN',
-            labelCategory: '🌍 選擇專屬題庫',
-            labelMode: '🎮 選擇遊玩模式',
-            labelRounds: '⏱️ 選擇題數 / 回合數',
-            labelPlayerNames: '📝 輸入玩家名字',
+            labelCategory: '選擇專屬題庫',
+            labelMode: '選擇遊玩模式',
+            labelRounds: '選擇題數 / 回合數',
+            labelPlayerNames: '輸入玩家名字',
             // Mode options
-            modeSolo: '👤 單人模式',
-            modeParty: '👥 多人模式 (2-4人)',
-            modeSurvival: '🔥 生存模式',
+            modeSolo: '單人模式',
+            modeParty: '多人模式 (2-4人)',
+            modeSurvival: '生存模式',
             // Round options
             rounds3: '3 回合 (熱身)',
             rounds5: '5 回合 (標準)',
@@ -424,9 +379,9 @@
             placeholderP4: '玩家 4 名字 (可留空)',
             // Buttons
             btnStart: '開始遊戲',
-            btnReplay: '🔄 原班人馬再玩一次',
-            btnHome: '🏠 返回主頁重設',
-            listenApple: '🎵 在 Apple Music 聽完整版',
+            btnReplay: '原班人馬再玩一次',
+            btnHome: '返回主頁重設',
+            listenApple: '在 Apple Music 聽完整版',
             // Game screen dynamic text
             loadingMsg: '正在尋找歌曲... (可能需要幾秒)',
             questionSong: '猜一猜這首歌是什麼？',
@@ -438,11 +393,11 @@
             // Lifelines
             btnAI: '🤖 問 AI',
             btnTime: '⏳ 加時神器',
-            aiAnalysis: '🤖 MusicGuessr AI 分析：',
+            aiAnalysis: 'MusicGuessr AI 分析：',
             // Combo
             comboActive: (n, icon) => `${icon} ${n} 連擊中！`,
             comboAchieved: (n, icon) => `${icon} ${n} 連擊達成！`,
-            // Score messages
+            // Score messages (遊戲反饋保留 Emoji)
             msgInstakill: '⚡ 秒殺！(+15)',
             msgSpeed: '🚀 極速！(+11)',
             msgCorrect: '✅ 答對！(+10)',
@@ -472,18 +427,18 @@
         },
         en: {
             // UI Labels
-            appTitle: '🎶 MusicGuessr',
+            appTitle: 'MusicGuessr',
             catMeme: 'Meme Challenge',
             catAnime: 'Anime (80-26)',
             langBtn: '中文',
-            labelCategory: '🌍 Select Music Library',
-            labelMode: '🎮 Select Game Mode',
-            labelRounds: '⏱️ Select Number of Rounds',
-            labelPlayerNames: '📝 Enter Player Names',
+            labelCategory: 'Select Music Library',
+            labelMode: 'Select Game Mode',
+            labelRounds: 'Select Number of Rounds',
+            labelPlayerNames: 'Enter Player Names',
             // Mode options
-            modeSolo: '👤 Solo Mode',
-            modeParty: '👥 Party Mode (2-4 Players)',
-            modeSurvival: '🔥 One Life Challenge',
+            modeSolo: 'Solo Mode',
+            modeParty: 'Party Mode (2-4 Players)',
+            modeSurvival: 'One Life Challenge',
             // Round options
             rounds3: '3 Rounds (Quick)',
             rounds5: '5 Rounds (Standard)',
@@ -495,9 +450,9 @@
             placeholderP4: 'Player 4 Name (Optional)',
             // Buttons
             btnStart: 'Start Game',
-            btnReplay: '🔄 Play Again (Same Players)',
-            btnHome: '🏠 Return to Home',
-            listenApple: '🎵 Listen on Apple Music',
+            btnReplay: 'Play Again (Same Players)',
+            btnHome: 'Return to Home',
+            listenApple: 'Listen on Apple Music',
             // Game screen dynamic text
             loadingMsg: 'Finding a song... (may take a few seconds)',
             questionSong: 'Listen to the intro — which song is this?',
@@ -509,7 +464,7 @@
             // Lifelines
             btnAI: '🤖 Ask AI',
             btnTime: '⏳ Extra Time',
-            aiAnalysis: '🤖 MusicGuessr AI Analysis:',
+            aiAnalysis: 'MusicGuessr AI Analysis:',
             // Combo
             comboActive: (n, icon) => `${icon} ${n}x Combo!`,
             comboAchieved: (n, icon) => `${icon} ${n}x Combo!`,
@@ -1372,6 +1327,8 @@
     let maxRounds = 5;
     let selectedCategories = []; 
     let currentThemeColor = "#b142ff"; 
+    let chosenMode = 'solo';    // 新增：預設單人模式
+    let chosenRounds = 5;       // 新增：預設5回合 
 
     let timerInterval;
     let timeSpent = 0;
@@ -1385,48 +1342,137 @@
     let fiftyFiftyUsedThisRound = false;
     let timeUsedThisRound = false;
 
-    window.onload = function() { updateTheme(); applyLang(); };
+    window.onload = function() { 
+        updateTheme(); 
+        applyLang(); 
+        setupScrollListener();
+        checkScrollMask();
+    };
 
-    function updateTheme() {
-        const checkboxes = document.querySelectorAll('.cat-checkbox:checked');
-        selectedCategories = Array.from(checkboxes).map(cb => cb.value);
-        const mode = document.getElementById('mode-select').value;
-        const title = document.getElementById('main-title');
-        const startBtn = document.getElementById('start-btn');
-        const replayBtn = document.getElementById('replay-btn');
-        
-        title.className = "";
-        
-        if (mode === 'survival') {
-            title.className = 'color-survival';
-            currentThemeColor = "#ff4d4d";
-        } else if (selectedCategories.length === 0) {
-            title.className = 'color-mixed';
-            currentThemeColor = "#b142ff";
-        } else if (selectedCategories.length === 1) {
-            const theme = musicDatabase[selectedCategories[0]];
-            title.className = theme.styleClass;
-            currentThemeColor = theme.themeColor;
+    // ================= 智能手風琴與遮罩 =================
+    function toggleAccordion(id) {
+        const container = document.getElementById('group-' + id);
+        const header = container.previousElementSibling;
+        container.classList.toggle('collapsed');
+        header.classList.toggle('active');
+        setTimeout(checkScrollMask, 360);
+    }
+
+    function setupScrollListener() {
+        const scrollBox = document.getElementById('category-scroll-box');
+        if(scrollBox) scrollBox.addEventListener('scroll', checkScrollMask);
+    }
+
+    function checkScrollMask() {
+        const scrollBox = document.getElementById('category-scroll-box');
+        const mask = document.getElementById('scroll-mask');
+        if (!scrollBox || !mask) return;
+        if (scrollBox.scrollHeight - scrollBox.scrollTop <= scrollBox.clientHeight + 8) {
+            mask.style.opacity = '0';
         } else {
-            title.className = 'color-mixed';
-            currentThemeColor = "#b142ff";
+            mask.style.opacity = '1';
+        }
+    }
+
+    // ================= 標籤多選大亂鬥邏輯 =================
+    function toggleCategory(catKey) {
+        const btn = document.querySelector(`.category-pill[data-value="${catKey}"]`);
+        const index = selectedCategories.indexOf(catKey);
+        
+        if (index > -1) {
+            selectedCategories.splice(index, 1);
+            btn.classList.remove('selected');
+        } else {
+            selectedCategories.push(catKey);
+            btn.classList.add('selected');
+        }
+        updateStartButtonCharging();
+        updateTheme(); // 新增：確保選區嗰陣，主標題顏色會跟住變
+    }
+
+    function updateStartButtonCharging() {
+        const startBtn = document.getElementById('start-btn');
+        if (selectedCategories.length === 0) {
+            startBtn.classList.remove('charged'); // 移除充能：鎖死按鈕
+            startBtn.style.background = '#333';
+            startBtn.style.color = '#777';
+            return;
         }
 
-        startBtn.style.backgroundColor = currentThemeColor;
-        replayBtn.style.backgroundColor = currentThemeColor;
-        startBtn.style.color = currentThemeColor === "#ff4d4d" ? "white" : "#121212";
-        replayBtn.style.color = currentThemeColor === "#ff4d4d" ? "white" : "#121212";
+        startBtn.classList.add('charged'); // 充能成功：解鎖按鈕點擊！
+
+        let colors = selectedCategories.map(cat => musicDatabase[cat] ? musicDatabase[cat].themeColor : '#b142ff');
+        colors = [...new Set(colors)];
+
+        if (colors.length === 1) {
+            startBtn.style.background = colors[0];
+            startBtn.style.color = (colors[0] === '#ffffff' || colors[0] === '#ffb703') ? '#121212' : '#fff';
+            // 添加單色發光
+            let hex = colors[0].replace('#','');
+            let r = parseInt(hex.substring(0,2), 16), g = parseInt(hex.substring(2,4), 16), b = parseInt(hex.substring(4,6), 16);
+            startBtn.style.setProperty('--btn-glow-rgb', `${r}, ${g}, ${b}`);
+        } else {
+            // 漸變色大亂鬥發光
+            startBtn.style.background = `linear-gradient(45deg, ${colors.join(', ')})`;
+            startBtn.style.color = '#fff';
+            startBtn.style.setProperty('--btn-glow-rgb', '177, 66, 255');
+        }
+    }
+
+    // ================= Tab 按鈕切換邏輯 =================
+    function setMode(modeValue) {
+        chosenMode = modeValue;
+        const buttons = document.querySelectorAll('#mode-tabs .tab-btn');
+        buttons.forEach(btn => btn.classList.remove('active'));
+        document.querySelector(`#mode-tabs .tab-btn[data-value="${modeValue}"]`).classList.add('active');
+        toggleModeUI();
+    }
+
+    function setRounds(roundValue) {
+        chosenRounds = parseInt(roundValue);
+        const buttons = document.querySelectorAll('#round-tabs .tab-btn');
+        buttons.forEach(btn => btn.classList.remove('active'));
+        document.querySelector(`#round-tabs .tab-btn[data-value="${roundValue}"]`).classList.add('active');
+    }
+
+    function updateTheme() {
+        const title = document.getElementById('main-title');
+        const replayBtn = document.getElementById('replay-btn');
+        title.className = "";
+        let themeColor = "#00d2ff";
+
+        if (typeof chosenMode !== 'undefined' && chosenMode === 'survival') {
+            title.className = 'color-survival';
+            themeColor = "#ff4d4d";
+            replayBtn.style.backgroundColor = themeColor;
+            replayBtn.style.color = "white";
+        } else if (selectedCategories.length > 0) {
+            const firstCat = selectedCategories[0];
+            const themeConfig = musicDatabase[firstCat];
+            if (themeConfig) {
+                title.className = themeConfig.styleClass;
+                themeColor = themeConfig.themeColor;
+            }
+            replayBtn.style.backgroundColor = themeColor;
+            replayBtn.style.color = "#121212";
+        } else {
+            title.className = 'color-jpop';
+            replayBtn.style.backgroundColor = '#00d2ff';
+            replayBtn.style.color = '#121212';
+        }
+
+        document.documentElement.style.setProperty('--theme-color', themeColor);
+        document.documentElement.style.setProperty('--theme-glow', themeColor + "44");
     }
 
     function toggleModeUI() {
-        const mode = document.getElementById('mode-select').value;
         const partyInputs = document.getElementById('party-inputs');
         const roundGroup = document.getElementById('round-group');
         
-        if (mode === 'party') {
+        if (chosenMode === 'party') {
             partyInputs.classList.remove('hidden');
             roundGroup.classList.remove('hidden');
-        } else if (mode === 'survival') {
+        } else if (chosenMode === 'survival') {
             partyInputs.classList.add('hidden');
             roundGroup.classList.add('hidden'); 
         } else {
@@ -1437,9 +1483,7 @@
     }
 
     function startGame() {
-        const checkboxes = document.querySelectorAll('.cat-checkbox:checked');
-        selectedCategories = Array.from(checkboxes).map(cb => cb.value);
-        
+        // 修改：不再讀取 querySelectorAll，因為已由 toggleCategory 處理
         if (selectedCategories.length === 0) {
             alert(currentLang === 'zh' ? "最少要選擇一個題庫先可以開始啊！" : "Please select at least one category!");
             return;
@@ -1448,7 +1492,8 @@
         const musicPlayer = document.getElementById("music-player");
         musicPlayer.volume = 0.3; 
 
-        const mode = document.getElementById('mode-select').value;
+        // 修改：使用 Tab 的變數
+        const mode = chosenMode;
         isSurvivalDead = false;
 
         document.getElementById("next-btn").style.backgroundColor = currentThemeColor;
@@ -1456,7 +1501,8 @@
         document.getElementById("next-btn").className = 'primary-btn hidden';
 
         let initialTokens = 0;
-        let playRounds = mode === 'survival' ? Infinity : parseInt(document.getElementById('round-select').value);
+        // 修改：使用 Tab 的回合數變數
+        let playRounds = mode === 'survival' ? Infinity : chosenRounds;
         if (mode === 'survival' || playRounds === 5) {
             initialTokens = 2;
         } else if (playRounds >= 10) {
@@ -1665,7 +1711,7 @@
 
     async function playRound() {
         const currentPlayer = players[currentPlayerIndex];
-        const mode = document.getElementById('mode-select').value;
+        const mode = chosenMode;
         
         // ✨ 【核心修正】: 回合剛開始，依照當前語系，動態同步刷新「進度題數Bar」與「分數Bar」
         if (mode === 'survival') {
@@ -1808,7 +1854,7 @@
         const musicPlayer = document.getElementById("music-player");
         const questionText = document.getElementById("question-text");
         const comboDiv = document.getElementById("combo-display");
-        const mode = document.getElementById('mode-select').value;
+        const mode = chosenMode;
         
         clearInterval(timerInterval); 
         allBtns.forEach(btn => btn.disabled = true);
@@ -1820,7 +1866,8 @@
         document.getElementById("lifeline-skip-btn").disabled = true;
 
         if (selectedId === correctId) {
-            clickedBtn.classList.add("btn-correct");
+            // 加入 pulse-wave 波浪特效
+            clickedBtn.classList.add("btn-correct", "pulse-wave");
             currentPlayer.combo++; 
 
             if (mode === 'survival' && currentPlayer.combo > 0 && currentPlayer.combo % 5 === 0) {
@@ -1870,7 +1917,8 @@
 
         } else {
             currentPlayer.combo = 0; 
-            clickedBtn.classList.add("btn-wrong");
+            // 加入 shake 震動特效
+            clickedBtn.classList.add("btn-wrong", "shake");
             
             if (mode === 'survival') {
                 isSurvivalDead = true;
@@ -1911,7 +1959,7 @@
     }
 
     function nextTurn() {
-        const mode = document.getElementById('mode-select').value;
+        const mode = chosenMode;
         if (mode === 'survival' && isSurvivalDead) {
             endGame();
             return;
@@ -1951,7 +1999,7 @@
     function endGame() {
         document.getElementById("game-screen").classList.add("hidden");
         document.getElementById("end-screen").classList.remove("hidden");
-        const mode = document.getElementById('mode-select').value;
+        const mode = chosenMode;
         
         triggerConfetti();
 
