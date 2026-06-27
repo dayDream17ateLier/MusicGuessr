@@ -1696,7 +1696,7 @@
         
         p.tokens--;
         fiftyFiftyUsedThisRound = true;
-        document.getElementById("token-display").innerText = `🎒 錦囊代幣: ${p.tokens} / 3`;
+        document.getElementById("token-display").innerText = `🪙 錦囊代幣: ${p.tokens} / 3`;
         document.getElementById("lifeline-5050-btn").disabled = true;
 
         // 搵出所有錯誤答案並洗牌，隨機隱藏 2 個
@@ -1714,7 +1714,7 @@
         
         p.tokens--;
         timeUsedThisRound = true;
-        document.getElementById("token-display").innerText = `🎒 錦囊代幣: ${p.tokens} / 3`;
+        document.getElementById("token-display").innerText = `🪙 錦囊代幣: ${p.tokens} / 3`;
         document.getElementById("lifeline-time-btn").disabled = true;
         
         roundMaxTime = 30; 
@@ -1741,7 +1741,7 @@
         playRound();
     }
 
-async function playRound() {
+    async function playRound() {
         const currentPlayer = players[currentPlayerIndex];
         const mode = document.getElementById('mode-select').value;
         
@@ -1761,7 +1761,7 @@ async function playRound() {
         if (maxRounds === 3 && mode !== 'survival') {
             tokenDisplay.classList.add("hidden"); // 3回合隱藏代幣
         } else {
-            tokenDisplay.innerText = `🎒 錦囊代幣: ${currentPlayer.tokens} / 3`;
+            tokenDisplay.innerText = `🪙 錦囊代幣: ${currentPlayer.tokens} / 3`;
             tokenDisplay.classList.remove("hidden");
         }
 
@@ -1774,23 +1774,6 @@ async function playRound() {
         document.getElementById("lifeline-time-btn").disabled = outOfTokens || isExtendedTime;
         document.getElementById("lifeline-skip-btn").disabled = outOfTokens;
         document.getElementById("lifeline-result").classList.add("hidden");
-
-        // ... (保留中間抽出歌曲嘅邏輯)
-
-        // ⚠️ 重要：喺 selectedOptions.forEach 建立 button 嗰陣，加入 dataset 方便 50/50 識別錯歌
-        selectedOptions.forEach(opt => {
-            let btn = document.createElement("button");
-            // 注意：isSongMode 時用 opt.search，原版用 opt.trackId (需根據你原本代碼適應)
-            let currentBtnId = isSongMode ? opt.search : opt.trackId; 
-            
-            btn.innerText = isSongMode ? opt.display : opt.cleanName; 
-            btn.className = "option-btn";
-            btn.dataset.id = currentBtnId;
-            btn.dataset.isCorrect = (currentBtnId === correctIdForCheck) ? "true" : "false"; // 標記對錯
-            
-            btn.onclick = function() { checkAnswer(this, currentBtnId, correctIdForCheck, selectedOptions, currentPlayer, correctTrackData, isSongMode) };
-            optionsContainer.appendChild(btn);
-        });
     
         const comboDiv = document.getElementById("combo-display");
         if (currentPlayer.combo >= 2) {
@@ -1820,14 +1803,14 @@ async function playRound() {
         musicPlayer.classList.add("hidden");
         questionText.innerText = t('loadingMsg');
 
-        // 🎯 核心修正：從玩家已選嘅題庫中，隨機抽 1 個題庫出嚟
+        // 🎯 核心：從玩家已選嘅題庫中，隨機抽 1 個題庫出嚟
         const randomCatKey = selectedCategories[Math.floor(Math.random() * selectedCategories.length)];
         const dbConfig = musicDatabase[randomCatKey];
         const isSongMode = !!dbConfig.hitSongs; 
         const currentPool = isSongMode ? dbConfig.hitSongs : dbConfig.artists;
 
         let randomItem = currentPool[Math.floor(Math.random() * currentPool.length)];
-        // 注意呢度加咗 dbConfig 參數
+        // 去 Apple Music 搵歌
         let tracks = await fetchTracksForThisQuestion(randomItem, dbConfig);
 
         if (tracks.length > 0) {
@@ -1847,14 +1830,6 @@ async function playRound() {
 
                 loadingMsg.classList.add("hidden");
                 questionText.innerText = t('questionSong');
-                
-                selectedOptions.forEach(opt => {
-                    let btn = document.createElement("button");
-                    btn.innerText = opt.display; 
-                    btn.className = "option-btn";
-                    btn.onclick = function() { checkAnswer(this, opt.search, correctIdForCheck, selectedOptions, currentPlayer, correctTrackData, isSongMode) };
-                    optionsContainer.appendChild(btn);
-                });
 
             } else {
                 // 🎤 【原版歌手模式】(Jpop / Canto / Kpop)：從同一個歌手抽 4 首唔同嘅歌
@@ -1872,15 +1847,22 @@ async function playRound() {
 
                 loadingMsg.classList.add("hidden");
                 questionText.innerText = t('questionArtist', randomItem.display);
-                
-                selectedOptions.forEach(track => {
-                    let btn = document.createElement("button");
-                    btn.innerText = track.cleanName; 
-                    btn.className = "option-btn";
-                    btn.onclick = function() { checkAnswer(this, track.trackId, correctIdForCheck, selectedOptions, currentPlayer, correctTrackData, isSongMode) };
-                    optionsContainer.appendChild(btn);
-                });
             }
+
+            // ⚠️ 統一喺攞完歌之後，先建立按鈕，加入 dataset 方便 50/50 識別錯歌
+            selectedOptions.forEach(opt => {
+                let btn = document.createElement("button");
+                // 注意：isSongMode 時用 opt.search，原版用 opt.trackId
+                let currentBtnId = isSongMode ? opt.search : opt.trackId; 
+                
+                btn.innerText = isSongMode ? opt.display : opt.cleanName; 
+                btn.className = "option-btn";
+                btn.dataset.id = currentBtnId;
+                btn.dataset.isCorrect = (currentBtnId === correctIdForCheck) ? "true" : "false"; // 標記對錯
+                
+                btn.onclick = function() { checkAnswer(this, currentBtnId, correctIdForCheck, selectedOptions, currentPlayer, correctTrackData, isSongMode) };
+                optionsContainer.appendChild(btn);
+            });
 
             musicPlayer.src = correctTrackData.previewUrl;
             musicPlayer.classList.remove("hidden");
