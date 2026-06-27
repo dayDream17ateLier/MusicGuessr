@@ -276,11 +276,11 @@
         <div class="setup-group">
             <label data-i18n="labelCategory">🌍 選擇專屬曲庫</label>
             <div class="category-grid" id="category-grid">
-                <label class="category-label cat-meme"><input type="checkbox" class="cat-checkbox" value="meme" onchange="updateTheme()"> 🤡 迷因大挑戰</label>
-                <label class="category-label cat-anime"><input type="checkbox" class="cat-checkbox" value="anime" onchange="updateTheme()"> 🔰 動漫專區 (80-26)</label>
+                <label class="category-label cat-meme"><input type="checkbox" class="cat-checkbox" value="meme" onchange="updateTheme()"> 🤡 <span data-i18n="catMeme">迷因大挑戰</span></label>
+                <label class="category-label cat-anime"><input type="checkbox" class="cat-checkbox" value="anime" onchange="updateTheme()"> 🔰 <span data-i18n="catAnime">動漫專區 (80-26)</span></label>
                 <label class="category-label cat-jpop"><input type="checkbox" class="cat-checkbox" value="jpop00" onchange="updateTheme()"> 🇯🇵 J-Pop (00-09)</label>
                 <label class="category-label cat-jpop"><input type="checkbox" class="cat-checkbox" value="jpop10" onchange="updateTheme()"> 🇯🇵 J-Pop (10-19)</label>
-                <label class="category-label cat-jpop"><input type="checkbox" class="cat-checkbox" value="jpop20" onchange="updateTheme()" checked> 🇯🇵 J-Pop (20-26)</label>
+                <label class="category-label cat-jpop"><input type="checkbox" class="cat-checkbox" value="jpop20" onchange="updateTheme()"> 🇯🇵 J-Pop (20-26)</label>
                 <label class="category-label cat-canto"><input type="checkbox" class="cat-checkbox" value="canto80" onchange="updateTheme()"> 🇭🇰 Canto (80-89)</label>
                 <label class="category-label cat-canto"><input type="checkbox" class="cat-checkbox" value="canto90" onchange="updateTheme()"> 🇭🇰 Canto (90-99)</label>
                 <label class="category-label cat-canto"><input type="checkbox" class="cat-checkbox" value="canto00" onchange="updateTheme()"> 🇭🇰 Canto (00-09)</label>
@@ -379,6 +379,8 @@
         zh: {
             // UI Labels
             appTitle: '🎶 估歌派對 MusicGuessr',
+            catMeme: '迷因大挑戰',
+            catAnime: '動漫專區 (80-26)',
             langBtn: 'EN',
             labelCategory: '🌍 選擇專屬題庫',
             labelMode: '🎮 選擇遊玩模式',
@@ -447,7 +449,9 @@
         },
         en: {
             // UI Labels
-            appTitle: '🎶 Music Guessr Party',
+            appTitle: '🎶 MusicGuessr',
+            catMeme: 'Meme Challenge',
+            catAnime: 'Anime (80-26)',
             langBtn: '中文',
             labelCategory: '🌍 Select Music Library',
             labelMode: '🎮 Select Game Mode',
@@ -1478,6 +1482,10 @@
             alert(currentLang === 'zh' ? "最少要選擇一個題庫先可以開始啊！" : "Please select at least one category!");
             return;
         }
+
+        // 只保留設定預設音量 30%，刪除會搞死電腦瀏覽器嘅 play() 解鎖
+        const musicPlayer = document.getElementById("music-player");
+        musicPlayer.volume = 0.3; 
 
         const mode = document.getElementById('mode-select').value;
         isSurvivalDead = false;
