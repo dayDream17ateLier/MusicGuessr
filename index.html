@@ -72,6 +72,7 @@
         .color-tw { color: #ff9800 !important; } 
         .color-kpop { color: #ff007f !important; }
         .color-meme { color: #8a2be2 !important; } 
+        .color-artist { color: #ff4081 !important; }
         .color-survival { color: #ff4d4d !important; }
         .color-mixed { color: #b142ff !important; }
         
@@ -100,13 +101,16 @@
 
         .category-pill { flex: 0 1 auto; background-color: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.06); color: rgba(255, 255, 255, 0.35); padding: 8px 14px; border-radius: 20px; cursor: pointer; transition: all 0.2s ease; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
         .category-pill:hover { color: rgba(255,255,255,0.8); background-color: rgba(255, 255, 255, 0.06); }
-        .category-pill.selected { opacity: 1 !important; }
-        .category-pill.selected.meme { border-color: #8a2be2; color: #fff; box-shadow: 0 0 10px rgba(138, 43, 226, 0.3); background: linear-gradient(135deg, rgba(138, 43, 226, 0.15), rgba(138, 43, 226, 0.02)); }
-        .category-pill.selected.anime { border-color: #ff4500; color: #fff; box-shadow: 0 0 10px rgba(255, 69, 0, 0.3); background: linear-gradient(135deg, rgba(255, 69, 0, 0.15), rgba(255, 69, 0, 0.02)); }
-        .category-pill.selected.jpop { border-color: #00d2ff; color: #fff; box-shadow: 0 0 10px rgba(0, 210, 255, 0.3); background: linear-gradient(135deg, rgba(0, 210, 255, 0.15), rgba(0, 210, 255, 0.02)); }
-        .category-pill.selected.canto { border-color: #ffb703; color: #fff; box-shadow: 0 0 10px rgba(255, 183, 3, 0.3); background: linear-gradient(135deg, rgba(255, 183, 3, 0.15), rgba(255, 183, 3, 0.02)); }
-        .category-pill.selected.tw { border-color: #ff9800; color: #fff; box-shadow: 0 0 10px rgba(255, 152, 0, 0.3); background: linear-gradient(135deg, rgba(255, 152, 0, 0.15), rgba(255, 152, 0, 0.02)); }
-        .category-pill.selected.kpop { border-color: #ff007f; color: #fff; box-shadow: 0 0 10px rgba(255, 0, 127, 0.3); background: linear-gradient(135deg, rgba(255, 0, 127, 0.15), rgba(255, 0, 127, 0.02)); }
+        .category-pill.selected { opacity: 1 !important; border: 1px solid transparent; }
+        
+        .category-pill.selected.meme { background: #8a2be2; color: #fff; box-shadow: 0 0 12px rgba(138, 43, 226, 0.6); }
+        .category-pill.selected.anime { background: #ff4500; color: #fff; box-shadow: 0 0 12px rgba(255, 69, 0, 0.6); }
+        .category-pill.selected.jpop { background: #00d2ff; color: #121212; box-shadow: 0 0 12px rgba(0, 210, 255, 0.6); }
+        .category-pill.selected.canto { background: #ffb703; color: #121212; box-shadow: 0 0 12px rgba(255, 183, 3, 0.6); }
+        .category-pill.selected.tw { background: #ff9800; color: #121212; box-shadow: 0 0 12px rgba(255, 152, 0, 0.6); }
+        .category-pill.selected.kpop { background: #ff007f; color: #fff; box-shadow: 0 0 12px rgba(255, 0, 127, 0.6); }
+        .category-pill.selected.artist-gold { background: linear-gradient(135deg, #ffd700, #ffaa00); color: #121212; box-shadow: 0 0 12px rgba(255, 215, 0, 0.6); }
+        .category-pill.selected.artist { border-color: #ff4081; color: #fff; box-shadow: 0 0 10px rgba(255, 64, 129, 0.3); background: linear-gradient(135deg, rgba(255, 64, 129, 0.15), rgba(255, 64, 129, 0.02)); }
 
         .tab-grid { display: flex; gap: 10px; width: 100%; }
         .tab-btn { flex: 1; background-color: #121212; border: 1px solid rgba(255, 255, 255, 0.15); color: #aaa; padding: 12px 8px; border-radius: 12px; cursor: pointer; transition: 0.2s ease; font-size: 13px; font-weight: 600; display: flex; flex-direction: column; align-items: center; gap: 6px; }
@@ -207,6 +211,12 @@
                             <button class="category-pill canto" data-value="canto00" onclick="toggleCategory('canto00')">00s 千禧</button>
                             <button class="category-pill canto" data-value="canto10" onclick="toggleCategory('canto10')">10s 新世代</button>
                             <button class="category-pill canto" data-value="canto20" onclick="toggleCategory('canto20')">20-26 當代</button>
+                            
+                            <div style="width: 100%; height: 1px; background: rgba(255,255,255,0.1); margin: 8px 4px;"></div>
+                            <div style="width: 100%; font-size: 12px; color: #888; margin-left: 6px; margin-bottom: 4px; font-weight: bold;" data-i18n="catArtist">✨ 歌手場</div>
+                            
+                            <button class="category-pill artist-gold" data-value="solo_eason" onclick="toggleCategory('solo_eason')">✨ <span data-i18n="artistEason">陳奕迅</span></button>
+                            <button class="category-pill artist-gold" data-value="solo_joey" onclick="toggleCategory('solo_joey')">✨ <span data-i18n="artistJoey">容祖兒</span></button>
                         </div>
                     </div>
 
@@ -219,6 +229,12 @@
                             <button class="category-pill tw" data-value="tw00" onclick="toggleCategory('tw00')">00s 千禧</button>
                             <button class="category-pill tw" data-value="tw10" onclick="toggleCategory('tw10')">10s 新世代</button>
                             <button class="category-pill tw" data-value="tw20" onclick="toggleCategory('tw20')">20-26 當代</button>
+                            
+                            <div style="width: 100%; height: 1px; background: rgba(255,255,255,0.1); margin: 8px 4px;"></div>
+                            <div style="width: 100%; font-size: 12px; color: #888; margin-left: 6px; margin-bottom: 4px; font-weight: bold;" data-i18n="catArtist">✨ 歌手場</div>
+                            
+                            <button class="category-pill artist-gold" data-value="solo_jay" onclick="toggleCategory('solo_jay')">✨ <span data-i18n="artistJay">周杰倫</span></button>
+                            <button class="category-pill artist-gold" data-value="solo_mayday" onclick="toggleCategory('solo_mayday')">✨ <span data-i18n="artistMayday">五月天</span></button>
                         </div>
                     </div>
 
@@ -231,6 +247,12 @@
                             <button class="category-pill jpop" data-value="jpop00" onclick="toggleCategory('jpop00')">00s 千禧</button>
                             <button class="category-pill jpop" data-value="jpop10" onclick="toggleCategory('jpop10')">10s 新世代</button>
                             <button class="category-pill jpop" data-value="jpop20" onclick="toggleCategory('jpop20')">20-26 當代</button>
+                            
+                            <div style="width: 100%; height: 1px; background: rgba(255,255,255,0.1); margin: 8px 4px;"></div>
+                            <div style="width: 100%; font-size: 12px; color: #888; margin-left: 6px; margin-bottom: 4px; font-weight: bold;" data-i18n="catArtist">✨ 歌手場</div>
+                            
+                            <button class="category-pill artist-gold" data-value="solo_yoasobi" onclick="toggleCategory('solo_yoasobi')">✨ YOASOBI</button>
+                            <button class="category-pill artist-gold" data-value="solo_kenshi" onclick="toggleCategory('solo_kenshi')">✨ 米津玄師</button>
                         </div>
                     </div>
 
@@ -243,6 +265,15 @@
                             <button class="category-pill kpop" data-value="kpop00" onclick="toggleCategory('kpop00')">00s 二代</button>
                             <button class="category-pill kpop" data-value="kpop10" onclick="toggleCategory('kpop10')">10s 三四代</button>
                             <button class="category-pill kpop" data-value="kpop20" onclick="toggleCategory('kpop20')">20-26 五代</button>
+
+                            <div style="width: 100%; height: 1px; background: rgba(255,255,255,0.1); margin: 8px 4px;"></div>
+                            <div style="width: 100%; font-size: 12px; color: #888; margin-left: 6px; margin-bottom: 4px; font-weight: bold;" data-i18n="catArtist">✨ 歌手場</div>
+                            
+                            <button class="category-pill artist-gold" data-value="solo_snsd" onclick="toggleCategory('solo_snsd')">✨ <span data-i18n="artistSNSD">少女時代</span></button>
+                            <button class="category-pill artist-gold" data-value="solo_bigbang" onclick="toggleCategory('solo_bigbang')">✨ <span data-i18n="artistBigbang">BIGBANG</span></button>
+                            <button class="category-pill artist-gold" data-value="solo_bts" onclick="toggleCategory('solo_bts')">✨ <span data-i18n="artistBTS">BTS</span></button>
+                            <button class="category-pill artist-gold" data-value="solo_blackpink" onclick="toggleCategory('solo_blackpink')">✨ <span data-i18n="artistBlackpink">BLACKPINK</span></button>
+                            <button class="category-pill artist-gold" data-value="solo_iu" onclick="toggleCategory('solo_iu')">✨ <span data-i18n="artistIU">IU</span></button>
                         </div>
                     </div>
 
@@ -357,6 +388,17 @@
         zh: {
             // UI Labels (已移除與 Icon 重複的 Emoji)
             appTitle: '估歌派對 MusicGuessr',
+            catArtist: '✨ 歌手場',
+            artistYoasobi: 'YOASOBI',
+            artistEason: '陳奕迅',
+            artistJoey: '容祖兒',
+            artistJay: '周杰倫',
+            artistMayday: '五月天',
+            artistSNSD: '少女時代',
+            artistBigbang: 'BIGBANG',
+            artistBTS: 'BTS',
+            artistBlackpink: 'BLACKPINK',
+            artistIU: 'IU',
             catMeme: '迷因大挑戰',
             catAnime: '動漫專區 (80-26)',
             langBtn: 'EN',
@@ -428,6 +470,17 @@
         en: {
             // UI Labels
             appTitle: 'MusicGuessr',
+            catArtist: '✨ Featured Artists',
+            artistYoasobi: 'YOASOBI',
+            artistEason: 'Eason Chan',
+            artistJoey: 'Joey Yung',
+            artistJay: 'Jay Chou',
+            artistMayday: 'Mayday',
+            artistSNSD: "Girls' Gen",
+            artistBigbang: 'BIGBANG',
+            artistBTS: 'BTS',
+            artistBlackpink: 'BLACKPINK',
+            artistIU: 'IU',
             catMeme: 'Meme Challenge',
             catAnime: 'Anime (80-26)',
             langBtn: '中文',
@@ -1244,7 +1297,7 @@
                 { search: "Kiri T", display: "Kiri T" }, { search: "Jeffrey Ngai", display: "魏浚笙" },
                 { search: "JFFT", display: "JFFT" }, { search: "農夫", display: "農夫" },
                 { search: "LMF", display: "LMF" }, { search: "廿四味", display: "廿四味" },
-                { search: "范梓謙", display: "四弟" }, { search: "Billy Choi", display: "Billy Choi" },
+                { search: "范梓謙", display: "Teddy Fan" }, { search: "Billy Choi", display: "Billy Choi" },
                 { search: "Dear Jane", display: "Dear Jane" }, { search: "AGA", display: "AGA 江海迦" },
                 { search: "Gin Lee", display: "Gin Lee 李幸倪" }, { search: "馮允謙", display: "馮允謙 Jay Fung" },
                 { search: "林奕匡", display: "林奕匡" }, { search: "許廷鏗", display: "許廷鏗" },
@@ -1318,7 +1371,120 @@
                 { search: "SEVENTEEN", display: "SEVENTEEN" }, { search: "BLACKPINK", display: "BLACKPINK" },
                 { search: "BTS", display: "BTS" }, { search: "IU", display: "IU" }
             ]
-        }
+        },
+        solo_yoasobi: {
+            country: "jp", themeColor: "#ffd700", styleClass: "color-jpop", minYear: 2019, maxYear: 2026,
+            artists: [
+                { search: "YOASOBI", display: "YOASOBI", filterArtist: "YOASOBI" },
+                { search: "YOASOBI THE BOOK", display: "YOASOBI", filterArtist: "YOASOBI" },
+                { search: "YOASOBI THE BOOK 2", display: "YOASOBI", filterArtist: "YOASOBI" },
+                { search: "YOASOBI THE BOOK 3", display: "YOASOBI", filterArtist: "YOASOBI" },
+                { search: "YOASOBI E-Side", display: "YOASOBI", filterArtist: "YOASOBI" }
+            ]
+        },
+        solo_kenshi: {
+            country: "jp", themeColor: "#ffd700", styleClass: "color-jpop", minYear: 2010, maxYear: 2026,
+            artists: [
+                { search: "米津玄師", display: "米津玄師", filterArtist: "米津玄師" },
+                { search: "Kenshi Yonezu", display: "米津玄師", filterArtist: "Yonezu" },
+                { search: "米津玄師 STRAY SHEEP", display: "米津玄師", filterArtist: "米津玄師" },
+                { search: "米津玄師 BOOTLEG", display: "米津玄師", filterArtist: "米津玄師" },
+                { search: "米津玄師 YANKEE", display: "米津玄師", filterArtist: "米津玄師" }
+            ]
+        },
+        solo_eason: {
+            country: "hk", themeColor: "#ffd700", styleClass: "color-canto", minYear: 1996, maxYear: 2026,
+            artists: [
+                { search: "陳奕迅", display: "陳奕迅", filterArtist: "陳奕迅" },
+                { search: "Eason Chan", display: "陳奕迅", filterArtist: "Eason" },
+                { search: "陳奕迅 U87", display: "陳奕迅", filterArtist: "陳奕迅" },
+                { search: "陳奕迅 H3M", display: "陳奕迅", filterArtist: "陳奕迅" },
+                { search: "陳奕迅 The Key", display: "陳奕迅", filterArtist: "陳奕迅" },
+                { search: "陳奕迅 準備中", display: "陳奕迅", filterArtist: "陳奕迅" },
+                { search: "陳奕迅 Stranger Under My Skin", display: "陳奕迅", filterArtist: "陳奕迅" },
+                { search: "陳奕迅 Shall We Dance", display: "陳奕迅", filterArtist: "陳奕迅" }
+            ]
+        },
+        solo_joey: {
+            country: "hk", themeColor: "#ffd700", styleClass: "color-canto", minYear: 1999, maxYear: 2026,
+            artists: [
+                { search: "容祖兒", display: "容祖兒", filterArtist: "容祖兒" },
+                { search: "Joey Yung", display: "容祖兒", filterArtist: "Joey" },
+                { search: "容祖兒 我的驕傲", display: "容祖兒", filterArtist: "容祖兒" },
+                { search: "容祖兒 Ten Most Wanted", display: "容祖兒", filterArtist: "容祖兒" },
+                { search: "容祖兒 隆重登場", display: "容祖兒", filterArtist: "容祖兒" },
+                { search: "容祖兒 喜歡祖兒", display: "容祖兒", filterArtist: "容祖兒" },
+                { search: "容祖兒 J-POP", display: "容祖兒", filterArtist: "容祖兒" },
+                { search: "容祖兒 薛丁格的貓", display: "容祖兒", filterArtist: "容祖兒" }
+            ]
+        },
+        solo_jay: {
+            country: "tw", themeColor: "#ffd700", styleClass: "color-tw", minYear: 2000, maxYear: 2026,
+            artists: [
+                { search: "周杰倫", display: "周杰倫", filterArtist: "周杰倫" },
+                { search: "周杰倫 范特西", display: "周杰倫", filterArtist: "周杰倫" },
+                { search: "周杰倫 八度空間", display: "周杰倫", filterArtist: "周杰倫" },
+                { search: "周杰倫 葉惠美", display: "周杰倫", filterArtist: "周杰倫" },
+                { search: "周杰倫 七里香", display: "周杰倫", filterArtist: "周杰倫" },
+                { search: "周杰倫 十一月的蕭邦", display: "周杰倫", filterArtist: "周杰倫" },
+                { search: "周杰倫 依然范特西", display: "周杰倫", filterArtist: "周杰倫" }
+            ]
+        },
+        solo_mayday: {
+            country: "tw", themeColor: "#ffd700", styleClass: "color-tw", minYear: 1999, maxYear: 2026,
+            artists: [
+                { search: "五月天", display: "五月天", filterArtist: "五月天" },
+                { search: "Mayday", display: "五月天", filterArtist: "Mayday" },
+                { search: "五月天 愛情萬歲", display: "五月天", filterArtist: "五月天" },
+                { search: "五月天 人生海海", display: "五月天", filterArtist: "五月天" },
+                { search: "五月天 神的孩子都在跳舞", display: "五月天", filterArtist: "五月天" },
+                { search: "五月天 後青春期的詩", display: "五月天", filterArtist: "五月天" },
+                { search: "五月天 第二人生", display: "五月天", filterArtist: "五月天" }
+            ]
+        },
+        solo_snsd: {
+            country: "kr", themeColor: "#ffd700", styleClass: "color-kpop", minYear: 2007, maxYear: 2026,
+            artists: [
+                { search: "少女時代", display: "少女時代", filterArtist: "少女時代" },
+                { search: "Girls' Generation", display: "少女時代", filterArtist: "Girls' Generation" }
+            ]
+        },
+        solo_bigbang: {
+            country: "kr", themeColor: "#ffd700", styleClass: "color-kpop", minYear: 2006, maxYear: 2026,
+            artists: [
+                { search: "BIGBANG", display: "BIGBANG", filterArtist: "BIGBANG" },
+                { search: "BIGBANG MADE", display: "BIGBANG", filterArtist: "BIGBANG" },
+                { search: "BIGBANG ALIVE", display: "BIGBANG", filterArtist: "BIGBANG" }
+            ]
+        },
+        solo_bts: {
+            country: "kr", themeColor: "#ffd700", styleClass: "color-kpop", minYear: 2013, maxYear: 2026,
+            artists: [
+                { search: "BTS", display: "BTS", filterArtist: "BTS" },
+                { search: "BTS Love Yourself", display: "BTS", filterArtist: "BTS" },
+                { search: "BTS Map of the Soul", display: "BTS", filterArtist: "BTS" },
+                { search: "BTS BE", display: "BTS", filterArtist: "BTS" },
+                { search: "BTS PROOF", display: "BTS", filterArtist: "BTS" }
+            ]
+        },
+        solo_blackpink: {
+            country: "kr", themeColor: "#ffd700", styleClass: "color-kpop", minYear: 2016, maxYear: 2026,
+            artists: [
+                { search: "BLACKPINK", display: "BLACKPINK", filterArtist: "BLACKPINK" },
+                { search: "BLACKPINK THE ALBUM", display: "BLACKPINK", filterArtist: "BLACKPINK" },
+                { search: "BLACKPINK BORN PINK", display: "BLACKPINK", filterArtist: "BLACKPINK" },
+                { search: "BLACKPINK SQUARE UP", display: "BLACKPINK", filterArtist: "BLACKPINK" }
+            ]
+        },
+        solo_iu: {
+            country: "kr", themeColor: "#ffd700", styleClass: "color-kpop", minYear: 2008, maxYear: 2026,
+            artists: [
+                { search: "IU", display: "IU", filterArtist: "IU" },
+                { search: "IU Palette", display: "IU", filterArtist: "IU" },
+                { search: "IU LILAC", display: "IU", filterArtist: "IU" },
+                { search: "IU Love Poem", display: "IU", filterArtist: "IU" }
+            ]
+        },
     };
     
     let players = [];
@@ -1576,7 +1742,19 @@
             data.results.forEach(track => {
                 if (track.previewUrl && track.releaseDate) {
                     const releaseYear = new Date(track.releaseDate).getFullYear();
-                    if (releaseYear >= config.minYear && releaseYear <= config.maxYear) {
+                    
+                    // 🛡️ 新增：防翻唱/雜錦碟過濾機制 (Artist Strict Filter)
+                    let artistMatch = true;
+                    if (artistObj.filterArtist) {
+                        const trackArtist = track.artistName.toLowerCase();
+                        const targetArtist = artistObj.filterArtist.toLowerCase();
+                        // 只要歌手名唔包含目標字眼，就判定為翻唱或無關歌曲，直接踢走
+                        if (!trackArtist.includes(targetArtist)) {
+                            artistMatch = false;
+                        }
+                    }
+
+                    if (artistMatch && releaseYear >= config.minYear && releaseYear <= config.maxYear) {
                         let cleanName = cleanTrackName(track.trackName);
                         if (!seenNames.has(cleanName.toLowerCase())) {
                             seenNames.add(cleanName.toLowerCase());
