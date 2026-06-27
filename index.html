@@ -5,9 +5,10 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🎶 估歌派對 MusicGuessr</title>
+    <title> 估歌派對 MusicGuessr</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
     <style>
+        /* 1. 全局字體與動態漸變背景大升級 */
         body {
             font-family: 'Poppins', -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
             background: radial-gradient(circle at 50% 0%, #1e1e26 0%, #0d0d11 100%);
@@ -18,23 +19,26 @@
             min-height: 100vh;
         }
 
-        /* 2. 懸浮磨砂玻璃貨架 + 智能霓虹外發光邊框 */
+        /* 2. 懸浮磨砂玻璃貨架 + 強化版霓虹外發光邊框 */
         :root {
-            --tg-rgb: 177, 66, 255; /* 預設混合色紫色 RGB */
+            --tg-rgb: 177, 66, 255; /* 預設動態 RGB 顏色變數 */
         }
         .container {
             max-width: 450px;
             margin: 20px auto;
-            background: rgba(30, 30, 35, 0.65); 
-            backdrop-filter: blur(20px); 
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.08); 
+            background: rgba(25, 25, 30, 0.75); 
+            backdrop-filter: blur(25px); 
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.1); 
             padding: 30px;
             border-radius: 24px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.6), 0 0 30px rgba(var(--tg-rgb), 0.15);
+            /* 💡 大幅強化外發光霓虹燈效果 */
+            box-shadow: 0 25px 60px rgba(0,0,0,0.8), 
+                        0 0 45px rgba(var(--tg-rgb), 0.5), 
+                        0 0 90px rgba(var(--tg-rgb), 0.2);
             position: relative;
             z-index: 10;
-            transition: box-shadow 0.5s ease;
+            transition: box-shadow 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
         #main-title { transition: 0.3s; margin-top: 0; font-size: 28px; }
         
@@ -104,13 +108,12 @@
             padding-right: 2px;
         }
         
-        /* 靚靚卷軸 Scrollbar */
         .category-grid::-webkit-scrollbar { width: 5px; }
         .category-grid::-webkit-scrollbar-track { background: transparent; }
         .category-grid::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
         .category-grid::-webkit-scrollbar-thumb:hover { background: #666; }
 
-        /* 「雲朵流體」膠囊標籤 (自動伸縮長短) */
+        /* 「雲朵流體」膠囊標籤 */
         .category-label {
             display: inline-flex;
             align-items: center;
@@ -128,12 +131,11 @@
             flex: 1 1 auto; 
             width: max-content;
             text-align: center;
-            opacity: 0.45; /* 未選中時淡出退到背景 */
+            opacity: 0.45; 
         }
-        .category-label input { display: none; } /* 隱藏原生 Checkbox */
+        .category-label input { display: none; } 
         .category-label:hover { transform: translateY(-1.5px); opacity: 0.75; border-color: rgba(255,255,255,0.2); }
 
-        /* 已選中標籤：點亮並淡淡填滿專屬微弱漸變底色 */
         .cat-meme:has(input:checked) { opacity: 1; border-color: #8a2be2; background: linear-gradient(145deg, rgba(138, 43, 226, 0.22), rgba(138, 43, 226, 0.05)); box-shadow: 0 0 10px rgba(138, 43, 226, 0.25); }
         .cat-anime:has(input:checked) { opacity: 1; border-color: #ff4500; background: linear-gradient(145deg, rgba(255, 69, 0, 0.22), rgba(255, 69, 0, 0.05)); box-shadow: 0 0 10px rgba(255, 69, 0, 0.25); }
         .cat-jpop:has(input:checked) { opacity: 1; border-color: #00d2ff; background: linear-gradient(145deg, rgba(0, 210, 255, 0.22), rgba(0, 210, 255, 0.05)); box-shadow: 0 0 10px rgba(0, 210, 255, 0.25); }
@@ -141,19 +143,26 @@
         .cat-tw:has(input:checked) { opacity: 1; border-color: #ff9800; background: linear-gradient(145deg, rgba(255, 152, 0, 0.22), rgba(255, 152, 0, 0.05)); box-shadow: 0 0 10px rgba(255, 152, 0, 0.25); }
         .cat-kpop:has(input:checked) { opacity: 1; border-color: #ff007f; background: linear-gradient(145deg, rgba(255, 0, 127, 0.22), rgba(255, 0, 127, 0.05)); box-shadow: 0 0 10px rgba(255, 0, 127, 0.25); }
 
-        /* 5. 模式與題數：橫排 Tab Buttons 粒粒按鈕設計 */
+        /* 5. 模式與題數：橫排 Tab Buttons 粒粒設計 */
         .tab-container { display: flex; gap: 5px; background: #141417; padding: 4px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.03); }
         .tab-btn {
-            flex: 1; padding: 10px 6px; background: transparent; border: none; color: #777;
-            font-size: 13px; font-weight: 700; border-radius: 8px; cursor: pointer; transition: all 0.2s ease;
+            flex: 1; padding: 10px 6px; background: transparent; border: none; color: #666;
+            font-size: 13px; font-weight: 700; border-radius: 8px; cursor: pointer; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex; align-items: center; justify-content: center; gap: 4px;
         }
         .tab-btn .material-icons-round { font-size: 17px; }
         .tab-btn:hover:not(.active) { color: #bbb; background: rgba(255,255,255,0.02); }
-        .tab-btn.active { background: #2a2a32; color: white; box-shadow: 0 3px 10px rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.05); }
+        
+        /* 💡 模式同題數按鈕選中時，自動注入當前曲風對應主題色與霓虹脈衝效果 */
+        .tab-btn.active { 
+            background: linear-gradient(135deg, rgba(var(--tg-rgb), 0.35), rgba(var(--tg-rgb), 0.1)); 
+            color: white !important; 
+            border: 1px solid rgba(var(--tg-rgb), 0.7);
+            box-shadow: 0 4px 15px rgba(var(--tg-rgb), 0.35);
+            text-shadow: 0 0 5px rgba(var(--tg-rgb), 0.5);
+        }
 
         /* 6. 大堂基礎佈局與設定面板 */
-        .hidden { display: none !important; }
         .setup-group {
             display: flex;
             flex-direction: column;
@@ -180,7 +189,7 @@
         }
         .setup-group input:focus { border-color: #666; }
 
-        /* 7. 遊戲進行畫面樣式 (計時、問題、狀態列) */
+        /* 7. 遊戲進行畫面樣式 */
         .status-bar {
             display: flex;
             justify-content: space-between;
@@ -270,7 +279,7 @@
             line-height: 1.4;
         }
 
-        /* 9. 四個選項按鈕 (加入懸停與震動脈衝動畫) */
+        /* 9. 四個選項按鈕 */
         .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
         .option-btn {
             background: linear-gradient(145deg, #24242a, #2f2f36);
@@ -293,7 +302,7 @@
         }
         .option-btn:active:not(:disabled) { transform: translateY(0.5px); }
         
-        /* 答錯左右震動 (Shake) 與 答啱波浪脈衝 (Pulse) */
+        /* 動態回饋動畫：Shake & Pulse */
         .shake-anim { animation: shakeEffect 0.4s ease-in-out; }
         @keyframes shakeEffect {
             0%, 100% { transform: translateX(0); }
@@ -325,7 +334,6 @@
         }
         .apple-music-link-btn:hover { background-color: #d11d31; transform: translateY(-1px); }
         
-        /* 「智能充能」主按鈕基礎狀態 (未選曲庫時呈暗灰鎖定狀態) */
         #start-btn { 
             opacity: 0.4; 
             pointer-events: none; 
@@ -363,7 +371,6 @@
         .leaderboard-item { font-size: 18px; padding: 12px 0; border-bottom: 1px solid #2a2a30; display: flex; justify-content: space-between; font-weight: 600; }
         .leaderboard-item:last-child { border-bottom: none; }
 
-        /* 語言切換按鈕 */
         .lang-toggle {
             position: absolute;
             top: 15px;
@@ -387,91 +394,91 @@
 
 <div class="container">
     <button class="lang-toggle" id="lang-toggle-btn" onclick="toggleLang()">EN</button>
-    <h1 id="main-title" class="color-jpop">🎶 <span id="app-title-text">估歌派對 MusicGuessr</span></h1>
+    <h1 id="main-title" class="color-jpop"><span id="app-title-text">估歌派對 MusicGuessr</span></h1>
 
     <div id="start-screen">
         <div class="setup-group">
-            <<label><span class="icon-align"><i class="material-icons-round color-canto">library_music</i> <span data-i18n="labelCategory">🌍 選擇專屬曲庫</span></span></label>
-        <div class="category-wrapper">
-            <div class="category-grid">
-                
-                <div class="accordion-item active">
-                    <div class="accordion-header" onclick="toggleAccordion(this)"><span>✨ 特色綜合</span><i class="material-icons-round">expand_more</i></div>
-                    <div class="accordion-content">
-                        <label class="category-label cat-meme"><input type="checkbox" class="cat-checkbox" value="meme" onchange="updateTheme()"> 🤡 <span data-i18n="catMeme">迷因大挑戰</span></label>
-                        <label class="category-label cat-anime"><input type="checkbox" class="cat-checkbox" value="anime" onchange="updateTheme()"> 🔰 <span data-i18n="catAnime">動漫專區 (80-26)</span></label>
+            <label><span class="icon-align"><i class="material-icons-round color-canto">library_music</i> <span data-i18n="labelCategory">選擇專屬曲庫</span></span></label>
+            <div class="category-wrapper">
+                <div class="category-grid">
+                    
+                    <div class="accordion-item active">
+                        <div class="accordion-header" onclick="toggleAccordion(this)"><span>特色綜合</span><i class="material-icons-round">expand_more</i></div>
+                        <div class="accordion-content">
+                            <label class="category-label cat-meme"><input type="checkbox" class="cat-checkbox" value="meme" onchange="updateTheme()"> <span data-i18n="catMeme">迷因大挑戰</span></label>
+                            <label class="category-label cat-anime"><input type="checkbox" class="cat-checkbox" value="anime" onchange="updateTheme()"> <span data-i18n="catAnime">動漫專區 (80-26)</span></label>
+                        </div>
                     </div>
-                </div>
 
-                <div class="accordion-item">
-                    <div class="accordion-header" onclick="toggleAccordion(this)"><span>🇭🇰 廣東話流行 (Canto-Pop)</span><i class="material-icons-round">expand_more</i></div>
-                    <div class="accordion-content">
-                        <label class="category-label cat-canto"><input type="checkbox" class="cat-checkbox" value="canto80" onchange="updateTheme()"> 80s (80-89)</label>
-                        <label class="category-label cat-canto"><input type="checkbox" class="cat-checkbox" value="canto90" onchange="updateTheme()"> 90s (90-99)</label>
-                        <label class="category-label cat-canto"><input type="checkbox" class="cat-checkbox" value="canto00" onchange="updateTheme()"> 00s (00-09)</label>
-                        <label class="category-label cat-canto"><input type="checkbox" class="cat-checkbox" value="canto10" onchange="updateTheme()"> 10s (10-19)</label>
-                        <label class="category-label cat-canto"><input type="checkbox" class="cat-checkbox" value="canto20" onchange="updateTheme()"> 當代 (20-26)</label>
+                    <div class="accordion-item">
+                        <div class="accordion-header" onclick="toggleAccordion(this)"><span>🇭🇰 香港流行 (Canto-Pop)</span><i class="material-icons-round">expand_more</i></div>
+                        <div class="accordion-content">
+                            <label class="category-label cat-canto"><input type="checkbox" class="cat-checkbox" value="canto80" onchange="updateTheme()"> 80s (80-89)</label>
+                            <label class="category-label cat-canto"><input type="checkbox" class="cat-checkbox" value="canto90" onchange="updateTheme()"> 90s (90-99)</label>
+                            <label class="category-label cat-canto"><input type="checkbox" class="cat-checkbox" value="canto00" onchange="updateTheme()"> 00s (00-09)</label>
+                            <label class="category-label cat-canto"><input type="checkbox" class="cat-checkbox" value="canto10" onchange="updateTheme()"> 10s (10-19)</label>
+                            <label class="category-label cat-canto"><input type="checkbox" class="cat-checkbox" value="canto20" onchange="updateTheme()"> 20s (20-26)</label>
+                        </div>
                     </div>
-                </div>
 
-                <div class="accordion-item">
-                    <div class="accordion-header" onclick="toggleAccordion(this)"><span>🇹🇼 台灣華語 (TW-Pop)</span><i class="material-icons-round">expand_more</i></div>
-                    <div class="accordion-content">
-                        <label class="category-label cat-tw"><input type="checkbox" class="cat-checkbox" value="tw00" onchange="updateTheme()"> 00s (00-09)</label>
-                        <label class="category-label cat-tw"><input type="checkbox" class="cat-checkbox" value="tw10" onchange="updateTheme()"> 10s (10-19)</label>
-                        <label class="category-label cat-tw"><input type="checkbox" class="cat-checkbox" value="tw20" onchange="updateTheme()"> 當代 (20-26)</label>
+                    <div class="accordion-item">
+                        <div class="accordion-header" onclick="toggleAccordion(this)"><span>🇹🇼 台灣流行 (TW-Pop)</span><i class="material-icons-round">expand_more</i></div>
+                        <div class="accordion-content">
+                            <label class="category-label cat-tw"><input type="checkbox" class="cat-checkbox" value="tw00" onchange="updateTheme()"> 00s (00-09)</label>
+                            <label class="category-label cat-tw"><input type="checkbox" class="cat-checkbox" value="tw10" onchange="updateTheme()"> 10s (10-19)</label>
+                            <label class="category-label cat-tw"><input type="checkbox" class="cat-checkbox" value="tw20" onchange="updateTheme()"> 20s (20-26)</label>
+                        </div>
                     </div>
-                </div>
 
-                <div class="accordion-item">
-                    <div class="accordion-header" onclick="toggleAccordion(this)"><span>🇯🇵 日本流行 (J-Pop)</span><i class="material-icons-round">expand_more</i></div>
-                    <div class="accordion-content">
-                        <label class="category-label cat-jpop"><input type="checkbox" class="cat-checkbox" value="jpop00" onchange="updateTheme()"> 00s (00-09)</label>
-                        <label class="category-label cat-jpop"><input type="checkbox" class="cat-checkbox" value="jpop10" onchange="updateTheme()"> 10s (10-19)</label>
-                        <label class="category-label cat-jpop"><input type="checkbox" class="cat-checkbox" value="jpop20" onchange="updateTheme()"> 當代 (20-26)</label>
+                    <div class="accordion-item">
+                        <div class="accordion-header" onclick="toggleAccordion(this)"><span>🇯🇵 日本流行 (J-Pop)</span><i class="material-icons-round">expand_more</i></div>
+                        <div class="accordion-content">
+                            <label class="category-label cat-jpop"><input type="checkbox" class="cat-checkbox" value="jpop00" onchange="updateTheme()"> 00s (00-09)</label>
+                            <label class="category-label cat-jpop"><input type="checkbox" class="cat-checkbox" value="jpop10" onchange="updateTheme()"> 10s (10-19)</label>
+                            <label class="category-label cat-jpop"><input type="checkbox" class="cat-checkbox" value="jpop20" onchange="updateTheme()"> 20s (20-26)</label>
+                        </div>
                     </div>
-                </div>
 
-                <div class="accordion-item">
-                    <div class="accordion-header" onclick="toggleAccordion(this)"><span>🇰🇷 韓國流行 (K-Pop)</span><i class="material-icons-round">expand_more</i></div>
-                    <div class="accordion-content">
-                        <label class="category-label cat-kpop"><input type="checkbox" class="cat-checkbox" value="kpop00" onchange="updateTheme()"> 00s (00-09)</label>
-                        <label class="category-label cat-kpop"><input type="checkbox" class="cat-checkbox" value="kpop10" onchange="updateTheme()"> 10s (10-19)</label>
-                        <label class="category-label cat-kpop"><input type="checkbox" class="cat-checkbox" value="kpop20" onchange="updateTheme()"> 當代 (20-26)</label>
+                    <div class="accordion-item">
+                        <div class="accordion-header" onclick="toggleAccordion(this)"><span>🇰🇷 韓國流行 (K-Pop)</span><i class="material-icons-round">expand_more</i></div>
+                        <div class="accordion-content">
+                            <label class="category-label cat-kpop"><input type="checkbox" class="cat-checkbox" value="kpop00" onchange="updateTheme()"> 00s (00-09)</label>
+                            <label class="category-label cat-kpop"><input type="checkbox" class="cat-checkbox" value="kpop10" onchange="updateTheme()"> 10s (10-19)</label>
+                            <label class="category-label cat-kpop"><input type="checkbox" class="cat-checkbox" value="kpop20" onchange="updateTheme()"> 20s (20-26)</label>
+                        </div>
                     </div>
-                </div>
 
+                </div>
             </div>
         </div>
-    </div>
 
-    <div class="setup-group">
-        <label><span class="icon-align"><i class="material-icons-round color-jpop">videogame_asset</i> <span data-i18n="labelMode">🎮 選擇遊玩模式</span></span></label>
-        <div class="tab-container" id="mode-tabs">
-            <button class="tab-btn active" data-value="solo" onclick="selectTab('mode', this)"><i class="material-icons-round">person</i><span data-i18n="modeSolo">單人模式</span></button>
-            <button class="tab-btn" data-value="party" onclick="selectTab('mode', this)"><i class="material-icons-round">groups</i><span data-i18n="modeParty">多人模式</span></button>
-            <button class="tab-btn" data-value="survival" onclick="selectTab('mode', this)"><i class="material-icons-round">local_fire_department</i><span data-i18n="modeSurvival">生存模式</span></button>
+        <div class="setup-group">
+            <label><span class="icon-align"><i class="material-icons-round color-jpop">videogame_asset</i> <span data-i18n="labelMode">選擇遊玩模式</span></span></label>
+            <div class="tab-container" id="mode-tabs">
+                <button class="tab-btn active" data-value="solo" onclick="selectTab('mode', this)"><i class="material-icons-round">person</i><span data-i18n="modeSolo">單人模式</span></button>
+                <button class="tab-btn" data-value="party" onclick="selectTab('mode', this)"><i class="material-icons-round">groups</i><span data-i18n="modeParty">多人模式</span></button>
+                <button class="tab-btn" data-value="survival" onclick="selectTab('mode', this)"><i class="material-icons-round">local_fire_department</i><span data-i18n="modeSurvival">生存模式</span></button>
+            </div>
         </div>
-    </div>
-    
-    <div class="setup-group" id="round-group">
-        <label><span class="icon-align"><i class="material-icons-round color-anime">hourglass_top</i> <span data-i18n="labelRounds">⏱️ 選擇題數 / 回合數</span></span></label>
-        <div class="tab-container" id="round-tabs">
-            <button class="tab-btn" data-value="3" onclick="selectTab('round', this)"><span data-i18n="rounds3">3 回合</span></button>
-            <button class="tab-btn active" data-value="5" onclick="selectTab('round', this)"><span data-i18n="rounds5">5 回合</span></button>
-            <button class="tab-btn" data-value="10" onclick="selectTab('round', this)"><span data-i18n="rounds10">10 回合</span></button>
+        
+        <div class="setup-group" id="round-group">
+            <label><span class="icon-align"><i class="material-icons-round color-anime">hourglass_top</i> <span data-i18n="labelRounds">選擇題數 / 回合數</span></span></label>
+            <div class="tab-container" id="round-tabs">
+                <button class="tab-btn" data-value="3" onclick="selectTab('round', this)"><span data-i18n="rounds3">3 回合</span></button>
+                <button class="tab-btn active" data-value="5" onclick="selectTab('round', this)"><span data-i18n="rounds5">5 回合</span></button>
+                <button class="tab-btn" data-value="10" onclick="selectTab('round', this)"><span data-i18n="rounds10">10 回合</span></button>
+            </div>
         </div>
+        
+        <div class="setup-group hidden" id="party-inputs">
+            <label data-i18n="labelPlayerNames">輸入玩家名字</label>
+            <input type="text" id="p1-name" data-i18n-placeholder="placeholderP1" placeholder="玩家 1 名字" value="玩家 A">
+            <input type="text" id="p2-name" data-i18n-placeholder="placeholderP2" placeholder="玩家 2 名字" value="玩家 B">
+            <input type="text" id="p3-name" data-i18n-placeholder="placeholderP3" placeholder="玩家 3 名字 (可留空)">
+            <input type="text" id="p4-name" placeholder="玩家 4 名字 (可留空)">
+        </div>
+        <button id="start-btn" class="primary-btn" onclick="startGame()" data-i18n="btnStart">開始遊戲</button>
     </div>
-    
-    <div class="setup-group hidden" id="party-inputs">
-        <label data-i18n="labelPlayerNames">📝 輸入玩家名字</label>
-        <input type="text" id="p1-name" data-i18n-placeholder="placeholderP1" placeholder="玩家 1 名字" value="玩家 A">
-        <input type="text" id="p2-name" data-i18n-placeholder="placeholderP2" placeholder="玩家 2 名字" value="玩家 B">
-        <input type="text" id="p3-name" data-i18n-placeholder="placeholderP3" placeholder="玩家 3 名字 (可留空)">
-        <input type="text" id="p4-name" placeholder="玩家 4 名字 (可留空)">
-    </div>
-    <button id="start-btn" class="primary-btn" onclick="startGame()" data-i18n="btnStart">開始遊戲</button>
-</div>
 
     <div id="game-screen" class="hidden">
         <div class="status-bar">
@@ -481,13 +488,13 @@
         
         <div class="turn-indicator hidden" id="turn-indicator">現在是 某某 的回合！</div>
         
-        <div id="token-display" class="hidden">🪙 錦囊代幣: 0</div>
+        <div id="token-display" class="hidden">錦囊代幣: 0</div>
         
         <div class="lifeline-box" id="lifeline-box">
-            <button class="lifeline-btn" id="lifeline-ai-btn" onclick="useAiLifeline()" data-i18n="btnAI">🤖 問 AI</button>
+            <button class="lifeline-btn" id="lifeline-ai-btn" onclick="useAiLifeline()" data-i18n="btnAI">問 AI</button>
             <button class="lifeline-btn" id="lifeline-5050-btn" onclick="use5050Lifeline()">½ 50/50</button>
-            <button class="lifeline-btn" id="lifeline-time-btn" onclick="useTimeLifeline()" data-i18n="btnTime">⏳ 加時</button>
-            <button class="lifeline-btn" id="lifeline-skip-btn" onclick="useSkipLifeline()">🔄 換歌</button>
+            <button class="lifeline-btn" id="lifeline-time-btn" onclick="useTimeLifeline()" data-i18n="btnTime">加時</button>
+            <button class="lifeline-btn" id="lifeline-skip-btn" onclick="useSkipLifeline()">換歌</button>
         </div>
         <div id="lifeline-result" class="hidden"></div>
 
@@ -505,7 +512,7 @@
         
         <div id="apple-link-container" class="hidden">
             <a id="apple-music-btn" href="#" target="_blank" class="apple-music-link-btn">
-                <span data-i18n="listenApple">🎵 在 Apple Music 聽完整版</span>
+                <span data-i18n="listenApple">在 Apple Music 聽完整版</span>
             </a>
         </div>
 
@@ -513,12 +520,12 @@
     </div>
 
     <div id="end-screen" class="hidden">
-        <h2 id="end-title" style="color: #4CAF50;">🏆 遊戲結束！賽果出爐</h2>
+        <h2 id="end-title" style="color: #4CAF50;">遊戲結束！賽果出爐</h2>
         <div class="leaderboard" id="leaderboard"></div>
         
         <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 25px;">
-            <button class="primary-btn" id="replay-btn" onclick="restartSameSettings()" data-i18n="btnReplay">🔄 原班人馬再玩一次</button>
-            <button class="primary-btn btn-secondary" onclick="location.reload()" data-i18n="btnHome">🏠 返回主頁</button>
+            <button class="primary-btn" id="replay-btn" onclick="restartSameSettings()" data-i18n="btnReplay">原班人馬再玩一次</button>
+            <button class="primary-btn btn-secondary" onclick="location.reload()" data-i18n="btnHome">返回主頁</button>
         </div>
     </div>
 </div>
@@ -532,49 +539,40 @@
 
     const i18n = {
         zh: {
-            // UI Labels
-            appTitle: '🎶 估歌派對 MusicGuessr',
+            appTitle: '估歌派對 MusicGuessr',
             catMeme: '迷因大挑戰',
             catAnime: '動漫專區 (80-26)',
             langBtn: 'EN',
-            labelCategory: '🌍 選擇專屬題庫',
-            labelMode: '🎮 選擇遊玩模式',
-            labelRounds: '⏱️ 選擇題數 / 回合數',
-            labelPlayerNames: '📝 輸入玩家名字',
-            // Mode options
-            modeSolo: '👤 單人模式',
-            modeParty: '👥 多人模式 (2-4人)',
-            modeSurvival: '🔥 生存模式',
-            // Round options
-            rounds3: '3 回合 (熱身)',
-            rounds5: '5 回合 (標準)',
-            rounds10: '10 回合 (地獄)',
-            // Placeholders
+            labelCategory: '選擇專屬題庫',
+            labelMode: '選擇遊玩模式',
+            labelRounds: '選擇題數 / 回合數',
+            labelPlayerNames: '輸入玩家名字',
+            modeSolo: '單人模式',
+            modeParty: '多人模式 (2-4人)',
+            modeSurvival: '生存模式',
+            rounds3: '3 回合',
+            rounds5: '5 回合',
+            rounds10: '10 回合',
             placeholderP1: '玩家 1 名字',
             placeholderP2: '玩家 2 名字',
             placeholderP3: '玩家 3 名字 (可留空)',
             placeholderP4: '玩家 4 名字 (可留空)',
-            // Buttons
             btnStart: '開始遊戲',
-            btnReplay: '🔄 原班人馬再玩一次',
-            btnHome: '🏠 返回主頁重設',
-            listenApple: '🎵 在 Apple Music 聽完整版',
-            // Game screen dynamic text
+            btnReplay: '原班人馬再玩一次',
+            btnHome: '返回主頁',
+            listenApple: '在 Apple Music 聽完整版',
             loadingMsg: '正在尋找歌曲... (可能需要幾秒)',
             questionSong: '猜一猜這首歌是什麼？',
             questionArtist: (artist) => `猜一猜，是 ${artist} 的哪一首歌？`,
-            turnIndicator: (name) => `🎧 現在是 ${name} 的回合！`,
+            turnIndicator: (name) => `現在是 ${name} 的回合！`,
             progressLabel: (cur, max) => `進度: ${cur} / ${max}`,
-            survivalLabel: (n) => `🔥 生存題數: ${n}`,
+            survivalLabel: (n) => `生存題數: ${n}`,
             scoreLabel: (n) => `分數: ${n}`,
-            // Lifelines
-            btnAI: '🤖 問 AI',
-            btnTime: '⏳ 加時神器',
-            aiAnalysis: '🤖 MusicGuessr AI 分析：',
-            // Combo
+            btnAI: '問 AI',
+            btnTime: '加時神器',
+            aiAnalysis: 'MusicGuessr AI 分析：',
             comboActive: (n, icon) => `${icon} ${n} 連擊中！`,
             comboAchieved: (n, icon) => `${icon} ${n} 連擊達成！`,
-            // Score messages
             msgInstakill: '⚡ 秒殺！(+15)',
             msgSpeed: '🚀 極速！(+11)',
             msgCorrect: '✅ 答對！(+10)',
@@ -583,69 +581,56 @@
             msgCombo: (n, bonus) => `🔥 ${n} 連擊 (+${bonus})`,
             msgWrong: '❌ 答錯了！連擊斷了...',
             msgSurvivalDead: '💥 答錯了！一命通關失敗！',
-            // Next button
             nextQuestion: '下一題 ➔',
             nextRound: '進入下一回合 ➔',
             nextPass: (name) => `傳給 ${name} ➔`,
             nextResults: '看賽果 ➔',
             nextSurvivalEnd: '💥 看賽果 ➔',
-            // End screen
             endTitleSurvival: '🔥 生存挑戰結束！',
             endTitleNormal: '🏆 賽果出爐！',
             survivalResult: (n) => `🌟 生存題數: <b>${n} 題</b>`,
             pointsLabel: (n) => `${n} 分`,
-            // Default player names
             defaultSoloName: '玩家',
             defaultSurvivalName: '生存者',
-            // Alerts
             alertServerBusy: '⚠️ Apple 伺服器繁忙，請重新開始！',
             alertServerBusy2: '⚠️ Apple Music 伺服器繁忙或歌曲不足，請返回大堂重新開始！',
             alertNeedTwoPlayers: '派對模式最少要有兩個玩家！',
         },
         en: {
-            // UI Labels
-            appTitle: '🎶 MusicGuessr',
+            appTitle: 'MusicGuessr',
             catMeme: 'Meme Challenge',
             catAnime: 'Anime (80-26)',
             langBtn: '中文',
-            labelCategory: '🌍 Select Music Library',
-            labelMode: '🎮 Select Game Mode',
-            labelRounds: '⏱️ Select Number of Rounds',
-            labelPlayerNames: '📝 Enter Player Names',
-            // Mode options
-            modeSolo: '👤 Solo Mode',
-            modeParty: '👥 Party Mode (2-4 Players)',
-            modeSurvival: '🔥 One Life Challenge',
-            // Round options
-            rounds3: '3 Rounds (Quick)',
-            rounds5: '5 Rounds (Standard)',
-            rounds10: '10 Rounds (Marathon)',
-            // Placeholders
+            labelCategory: 'Select Music Library',
+            labelMode: 'Select Game Mode',
+            labelRounds: 'Select Number of Rounds',
+            labelPlayerNames: 'Enter Player Names',
+            modeSolo: 'Solo Mode',
+            modeParty: 'Party Mode (2-4 Players)',
+            modeSurvival: 'One Life Challenge',
+            rounds3: '3 Rounds',
+            rounds5: '5 Rounds',
+            rounds10: '10 Rounds',
             placeholderP1: 'Player 1 Name',
             placeholderP2: 'Player 2 Name',
             placeholderP3: 'Player 3 Name (Optional)',
             placeholderP4: 'Player 4 Name (Optional)',
-            // Buttons
             btnStart: 'Start Game',
-            btnReplay: '🔄 Play Again (Same Players)',
-            btnHome: '🏠 Return to Home',
-            listenApple: '🎵 Listen on Apple Music',
-            // Game screen dynamic text
+            btnReplay: 'Play Again (Same Players)',
+            btnHome: 'Return to Home',
+            listenApple: 'Listen on Apple Music',
             loadingMsg: 'Finding a song... (may take a few seconds)',
             questionSong: 'Listen to the intro — which song is this?',
             questionArtist: (artist) => `Listen to the intro — which ${artist} song is this?`,
-            turnIndicator: (name) => `🎧 It's ${name}'s Turn!`,
+            turnIndicator: (name) => `It's ${name}'s Turn!`,
             progressLabel: (cur, max) => `Round: ${cur} / ${max}`,
-            survivalLabel: (n) => `🔥 Questions Survived: ${n}`,
+            survivalLabel: (n) => `Questions Survived: ${n}`,
             scoreLabel: (n) => `Score: ${n}`,
-            // Lifelines
-            btnAI: '🤖 Ask AI',
-            btnTime: '⏳ Extra Time',
-            aiAnalysis: '🤖 MusicGuessr AI Analysis:',
-            // Combo
+            btnAI: 'Ask AI',
+            btnTime: 'Extra Time',
+            aiAnalysis: 'MusicGuessr AI Analysis:',
             comboActive: (n, icon) => `${icon} ${n}x Combo!`,
             comboAchieved: (n, icon) => `${icon} ${n}x Combo!`,
-            // Score messages
             msgInstakill: '⚡ Instant! (+15)',
             msgSpeed: '🚀 Super Fast! (+11)',
             msgCorrect: '✅ Correct! (+10)',
@@ -654,21 +639,17 @@
             msgCombo: (n, bonus) => `🔥 ${n}x Combo (+${bonus})`,
             msgWrong: '❌ Wrong! Combo broken...',
             msgSurvivalDead: '💥 Wrong! One Life Challenge failed!',
-            // Next button
             nextQuestion: 'Next Question ➔',
             nextRound: 'Next Round ➔',
-            nextPass: (name) => `Pass to ${name} ➔`,
+            nextPass: (name) => `Pass to ${name} ➔',
             nextResults: 'See Results ➔',
             nextSurvivalEnd: '💥 See Results ➔',
-            // End screen
-            endTitleSurvival: '🔥 Survival Challenge Over!',
-            endTitleNormal: '🏆 Results!',
-            survivalResult: (n) => `🌟 Questions Survived: <b>${n}</b>`,
+            endTitleSurvival: 'Survival Challenge Over!',
+            endTitleNormal: 'Results!',
+            survivalResult: (n) => `Questions Survived: <b>${n}</b>`,
             pointsLabel: (n) => `${n} pts`,
-            // Default player names
             defaultSoloName: 'Player',
             defaultSurvivalName: 'Survivor',
-            // Alerts
             alertServerBusy: '⚠️ Apple servers are busy. Please restart!',
             alertServerBusy2: '⚠️ Apple Music server busy or not enough songs. Please return to home!',
             alertNeedTwoPlayers: 'Party mode requires at least 2 players!',
