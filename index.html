@@ -1696,7 +1696,7 @@
         
         p.tokens--;
         fiftyFiftyUsedThisRound = true;
-        document.getElementById("token-display").innerText = `🎒 救命代幣: ${p.tokens} / 3`;
+        document.getElementById("token-display").innerText = `🎒 錦囊代幣: ${p.tokens} / 3`;
         document.getElementById("lifeline-5050-btn").disabled = true;
 
         // 搵出所有錯誤答案並洗牌，隨機隱藏 2 個
@@ -1714,7 +1714,7 @@
         
         p.tokens--;
         timeUsedThisRound = true;
-        document.getElementById("token-display").innerText = `🎒 救命代幣: ${p.tokens} / 3`;
+        document.getElementById("token-display").innerText = `🎒 錦囊代幣: ${p.tokens} / 3`;
         document.getElementById("lifeline-time-btn").disabled = true;
         
         roundMaxTime = 30; 
@@ -1761,7 +1761,7 @@ async function playRound() {
         if (maxRounds === 3 && mode !== 'survival') {
             tokenDisplay.classList.add("hidden"); // 3回合隱藏代幣
         } else {
-            tokenDisplay.innerText = `🎒 救命代幣: ${currentPlayer.tokens} / 3`;
+            tokenDisplay.innerText = `🎒 錦囊代幣: ${currentPlayer.tokens} / 3`;
             tokenDisplay.classList.remove("hidden");
         }
 
