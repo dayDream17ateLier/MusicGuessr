@@ -151,21 +151,31 @@
         .lifeline-box {
             display: flex;
             justify-content: center;
-            gap: 15px;
-            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 10px;
         }
         .lifeline-btn {
             background-color: #444;
             border: 1px solid #666;
-            padding: 8px 16px;
+            padding: 8px 12px;
             font-size: 13px;
             border-radius: 20px;
             color: #fff;
             cursor: pointer;
             transition: 0.2s;
+            flex-grow: 1;
         }
         .lifeline-btn:hover:not(:disabled) { background-color: #666; }
-        .lifeline-btn:disabled { opacity: 0.25; cursor: not-allowed; border-color: #333; }
+        .lifeline-btn:disabled { opacity: 0.3; cursor: not-allowed; border-color: #333; }
+        
+        #token-display {
+            font-size: 14px;
+            font-weight: bold;
+            color: #ffd700;
+            margin-bottom: 15px;
+            text-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
+        }
         
         #lifeline-result {
             background-color: rgba(255, 255, 255, 0.05);
@@ -339,9 +349,13 @@
         
         <div class="turn-indicator hidden" id="turn-indicator">現在是 某某 的回合！</div>
         
+        <div id="token-display" class="hidden">🪙 錦囊代幣: 0</div>
+        
         <div class="lifeline-box" id="lifeline-box">
             <button class="lifeline-btn" id="lifeline-ai-btn" onclick="useAiLifeline()" data-i18n="btnAI">🤖 問 AI</button>
-            <button class="lifeline-btn" id="lifeline-time-btn" onclick="useTimeLifeline()" data-i18n="btnTime">⏳ 加時神器</button>
+            <button class="lifeline-btn" id="lifeline-5050-btn" onclick="use5050Lifeline()">½ 50/50</button>
+            <button class="lifeline-btn" id="lifeline-time-btn" onclick="useTimeLifeline()" data-i18n="btnTime">⏳ 加時</button>
+            <button class="lifeline-btn" id="lifeline-skip-btn" onclick="useSkipLifeline()">🔄 換歌</button>
         </div>
         <div id="lifeline-result" class="hidden"></div>
 
@@ -1431,6 +1445,12 @@
     let isExtendedTime = false; 
     let isSurvivalDead = false;
     let retryCount = 0; 
+    
+    // --- 新增嘅錦囊狀態變數 ---
+    let isSkipping = false; // 控制換歌是否繼承時間
+    let aiUsedThisRound = false;
+    let fiftyFiftyUsedThisRound = false;
+    let timeUsedThisRound = false;
 
     window.onload = function() { updateTheme(); applyLang(); };
 
@@ -1503,25 +1523,34 @@
         document.getElementById("next-btn").style.color = currentThemeColor === "#ff4d4d" ? "white" : "#121212";
         document.getElementById("next-btn").className = 'primary-btn hidden';
 
+        // 計算開局代幣
+        let initialTokens = 0;
+        let playRounds = mode === 'survival' ? Infinity : parseInt(document.getElementById('round-select').value);
+        if (mode === 'survival' || playRounds === 5) {
+            initialTokens = 2;
+        } else if (playRounds >= 10) {
+            initialTokens = 3;
+        } // 3 回合會維持 0 個代幣
+        
         if (mode === 'survival') {
             maxRounds = Infinity; 
-            players = [{ name: t('defaultSurvivalName'), score: 0, combo: 0, aiUsed: false, timeUsed: false }];
+            players = [{ name: t('defaultSurvivalName'), score: 0, combo: 0, tokens: initialTokens }];
         } else if (mode === 'solo') {
-            maxRounds = parseInt(document.getElementById('round-select').value);
-            players = [{ name: t('defaultSoloName'), score: 0, combo: 0, aiUsed: false, timeUsed: false }];
+            maxRounds = playRounds;
+            players = [{ name: t('defaultSoloName'), score: 0, combo: 0, tokens: initialTokens }];
         } else {
-            maxRounds = parseInt(document.getElementById('round-select').value);
+            maxRounds = playRounds;
             const names = [
                 document.getElementById('p1-name').value.trim(),
                 document.getElementById('p2-name').value.trim(),
                 document.getElementById('p3-name').value.trim(),
                 document.getElementById('p4-name').value.trim()
             ];
-            names.forEach(name => { if (name !== "") players.push({ name: name, score: 0, combo: 0, aiUsed: false, timeUsed: false }); });
+            names.forEach(name => { if (name !== "") players.push({ name: name, score: 0, combo: 0, tokens: initialTokens }); });
 
             if (players.length < 2) { alert(t('alertNeedTwoPlayers')); players = []; return; }
         }
-
+    
         document.getElementById("start-screen").classList.add("hidden");
         document.getElementById("game-screen").classList.remove("hidden");
         if (mode === 'party') document.getElementById("turn-indicator").classList.remove("hidden");
@@ -1587,8 +1616,12 @@
 
     function startTimer() {
         clearInterval(timerInterval);
-        timeSpent = 0;
+        // 如果唔係換歌，先重置時間
+        if (!isSkipping) { timeSpent = 0; }
+        isSkipping = false; // 重置狀態
+
         document.getElementById("timer-container").classList.remove("hidden");
+        // ... (保留下方計時邏輯)
         const timerBar = document.getElementById("timer-bar");
         timerBar.style.width = "100%";
         timerBar.style.backgroundColor = "#4CAF50"; 
@@ -1616,38 +1649,74 @@
         }, 100);
     }
 
-function useAiLifeline() {
-        // 直接停用當前題目嘅 AI 按鈕，防止瘋狂撳，但唔會扣玩家全局次數
-        document.getElementById("lifeline-ai-btn").disabled = true;
+    function useAiLifeline() {
+        if (aiUsedThisRound) return;
+        aiUsedThisRound = true;
         
-        const optionButtons = document.querySelectorAll(".option-btn");
-        if (optionButtons.length < 4) return;
-
-        let r1 = Math.random() * 35 + 5;
-        let r2 = Math.random() * 35 + 5;
-        let r3 = Math.random() * 35 + 5;
-        let r4 = Math.random() * 35 + 5;
-        let sum = r1 + r2 + r3 + r4;
+        const aiBtn = document.getElementById("lifeline-ai-btn");
+        aiBtn.disabled = true;
+        aiBtn.innerText = "⏳ 運算中..."; // 營造緊張感
         
-        let p1 = Math.round((r1/sum)*100);
-        let p2 = Math.round((r2/sum)*100);
-        let p3 = Math.round((r3/sum)*100);
-        let p4 = 100 - (p1 + p2 + p3); 
+        // 延遲 2.5 秒出結果 (消耗玩家時間)
+        setTimeout(() => {
+            aiBtn.innerText = "🤖 已分析";
+            const visibleBtns = Array.from(document.querySelectorAll(".option-btn:not(.hidden)"));
+            if (visibleBtns.length === 0) return;
 
-        const infoDiv = document.getElementById("lifeline-result");
-        infoDiv.innerHTML = `🤖 <b>${t('aiAnalysis')}</b><br>
-        【${optionButtons[0].innerText}】: <b>${p1}%</b><br>
-        【${optionButtons[1].innerText}】: <b>${p2}%</b><br>
-        【${optionButtons[2].innerText}】: <b>${p3}%</b><br>
-        【${optionButtons[3].innerText}】: <b>${p4}%</b>`;
-        infoDiv.classList.remove("hidden");
+            let resultHTML = `🤖 <b>MusicGuessr AI 分析：</b><br>`;
+            
+            if (visibleBtns.length === 2) {
+                // 如果用咗 50/50，只分 100% 俾淨低兩個
+                let p1 = Math.floor(Math.random() * 40) + 30; // 30% - 70% 之間
+                let p2 = 100 - p1;
+                resultHTML += `【${visibleBtns[0].innerText}】: <b>${p1}%</b><br>`;
+                resultHTML += `【${visibleBtns[1].innerText}】: <b>${p2}%</b><br>`;
+            } else {
+                // 原本 4 個選項嘅機率分配
+                let r1 = Math.random() * 35 + 5, r2 = Math.random() * 35 + 5;
+                let r3 = Math.random() * 35 + 5, r4 = Math.random() * 35 + 5;
+                let sum = r1 + r2 + r3 + r4;
+                let p1 = Math.round((r1/sum)*100), p2 = Math.round((r2/sum)*100);
+                let p3 = Math.round((r3/sum)*100), p4 = 100 - (p1 + p2 + p3); 
+                resultHTML += `【${visibleBtns[0].innerText}】: <b>${p1}%</b><br>`;
+                resultHTML += `【${visibleBtns[1].innerText}】: <b>${p2}%</b><br>`;
+                resultHTML += `【${visibleBtns[2].innerText}】: <b>${p3}%</b><br>`;
+                resultHTML += `【${visibleBtns[3].innerText}】: <b>${p4}%</b>`;
+            }
+
+            const infoDiv = document.getElementById("lifeline-result");
+            infoDiv.innerHTML = resultHTML;
+            infoDiv.classList.remove("hidden");
+        }, 2500);
+    }
+
+    function use5050Lifeline() {
+        const p = players[currentPlayerIndex];
+        if (p.tokens <= 0 || fiftyFiftyUsedThisRound) return;
+        
+        p.tokens--;
+        fiftyFiftyUsedThisRound = true;
+        document.getElementById("token-display").innerText = `🎒 救命代幣: ${p.tokens} / 3`;
+        document.getElementById("lifeline-5050-btn").disabled = true;
+
+        // 搵出所有錯誤答案並洗牌，隨機隱藏 2 個
+        const allBtns = Array.from(document.querySelectorAll(".option-btn"));
+        const wrongBtns = allBtns.filter(btn => btn.dataset.isCorrect === "false");
+        const shuffledWrong = shuffleArray(wrongBtns);
+        
+        shuffledWrong[0].classList.add("hidden");
+        shuffledWrong[1].classList.add("hidden");
     }
 
     function useTimeLifeline() {
-        const currentPlayer = players[currentPlayerIndex];
-        if (currentPlayer.timeUsed) return;
-        currentPlayer.timeUsed = true;
+        const p = players[currentPlayerIndex];
+        if (p.tokens <= 0 || timeUsedThisRound) return;
+        
+        p.tokens--;
+        timeUsedThisRound = true;
+        document.getElementById("token-display").innerText = `🎒 救命代幣: ${p.tokens} / 3`;
         document.getElementById("lifeline-time-btn").disabled = true;
+        
         roundMaxTime = 30; 
         isExtendedTime = true;
 
@@ -1659,26 +1728,69 @@ function useAiLifeline() {
         }
     }
 
+    function useSkipLifeline() {
+        const p = players[currentPlayerIndex];
+        if (p.tokens <= 0) return;
+        
+        p.tokens--;
+        // 標記為 Skipping，阻止 playRound() 重置時間
+        isSkipping = true; 
+        document.getElementById("music-player").pause();
+        
+        // 即刻抽過新題目
+        playRound();
+    }
+
 async function playRound() {
         const currentPlayer = players[currentPlayerIndex];
         const mode = document.getElementById('mode-select').value;
-        roundMaxTime = 20;
-        isExtendedTime = false;
+        
+        // 只有非換歌狀態下先重置回合時間與限制
+        if (!isSkipping) {
+            roundMaxTime = 20;
+            isExtendedTime = false;
+        }
+        
+        // 每一題重置錦囊使用狀態
+        aiUsedThisRound = false;
+        fiftyFiftyUsedThisRound = false;
+        timeUsedThisRound = false;
 
-        if (mode === 'party') {
-            document.getElementById("turn-indicator").innerText = t('turnIndicator', currentPlayer.name);
-        }
-        
-        if (mode === 'survival') {
-            document.getElementById("round-counter").innerText = t('survivalLabel', currentRound);
+        // 更新代幣 UI
+        const tokenDisplay = document.getElementById("token-display");
+        if (maxRounds === 3 && mode !== 'survival') {
+            tokenDisplay.classList.add("hidden"); // 3回合隱藏代幣
         } else {
-            document.getElementById("round-counter").innerText = t('progressLabel', currentRound, maxRounds);
+            tokenDisplay.innerText = `🎒 救命代幣: ${currentPlayer.tokens} / 3`;
+            tokenDisplay.classList.remove("hidden");
         }
-        document.getElementById("score-display").innerText = t('scoreLabel', currentPlayer.score);
-        
+
+        // 鎖定/解鎖錦囊按鈕
         document.getElementById("lifeline-ai-btn").disabled = false;
-        document.getElementById("lifeline-time-btn").disabled = currentPlayer.timeUsed;
+        document.getElementById("lifeline-ai-btn").innerText = t('btnAI') || "🤖 問 AI";
+        
+        let outOfTokens = currentPlayer.tokens <= 0;
+        document.getElementById("lifeline-5050-btn").disabled = outOfTokens;
+        document.getElementById("lifeline-time-btn").disabled = outOfTokens || isExtendedTime;
+        document.getElementById("lifeline-skip-btn").disabled = outOfTokens;
         document.getElementById("lifeline-result").classList.add("hidden");
+
+        // ... (保留中間抽出歌曲嘅邏輯)
+
+        // ⚠️ 重要：喺 selectedOptions.forEach 建立 button 嗰陣，加入 dataset 方便 50/50 識別錯歌
+        selectedOptions.forEach(opt => {
+            let btn = document.createElement("button");
+            // 注意：isSongMode 時用 opt.search，原版用 opt.trackId (需根據你原本代碼適應)
+            let currentBtnId = isSongMode ? opt.search : opt.trackId; 
+            
+            btn.innerText = isSongMode ? opt.display : opt.cleanName; 
+            btn.className = "option-btn";
+            btn.dataset.id = currentBtnId;
+            btn.dataset.isCorrect = (currentBtnId === correctIdForCheck) ? "true" : "false"; // 標記對錯
+            
+            btn.onclick = function() { checkAnswer(this, currentBtnId, correctIdForCheck, selectedOptions, currentPlayer, correctTrackData, isSongMode) };
+            optionsContainer.appendChild(btn);
+        });
     
         const comboDiv = document.getElementById("combo-display");
         if (currentPlayer.combo >= 2) {
@@ -1802,12 +1914,24 @@ async function playRound() {
         musicPlayer.pause(); 
 
         document.getElementById("lifeline-ai-btn").disabled = true;
+        document.getElementById("lifeline-5050-btn").disabled = true;
         document.getElementById("lifeline-time-btn").disabled = true;
+        document.getElementById("lifeline-skip-btn").disabled = true;
 
         if (selectedId === correctId) {
             clickedBtn.classList.add("btn-correct");
             currentPlayer.combo++; 
 
+            // --- 新增：生存模式 5 連勝派代幣 (防通脹機制) ---
+            if (mode === 'survival' && currentPlayer.combo > 0 && currentPlayer.combo % 5 === 0) {
+                if (currentPlayer.tokens < 3) {
+                    currentPlayer.tokens++;
+                    questionText.innerHTML += `<span style="color:#4CAF50; font-size: 14px;">🎁 生存 5 連勝！獲得 1 個代幣！</span><br>`;
+                } else {
+                    questionText.innerHTML += `<span style="color:#aaa; font-size: 14px;">🎒 滿 5 連勝，但代幣已達上限 (3個)！</span><br>`;
+                }
+            }
+            
             let basePoints = 0;
             let speedMsg = "";
 
