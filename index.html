@@ -8,6 +8,7 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <style>
         :root {
             --theme-color: #00d2ff;
@@ -168,6 +169,15 @@
 
         .lang-toggle { position: absolute; top: 15px; right: 15px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #ddd; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.2s; z-index: 100; }
         .lang-toggle:hover { background: rgba(255,255,255,0.2); color: #fff; }
+        
+        .history-list { text-align: left; background: rgba(0, 0, 0, 0.2); padding: 15px; border-radius: 16px; max-height: 350px; overflow-y: auto; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 20px; }
+        .history-list::-webkit-scrollbar { width: 4px; }
+        .history-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+        .history-item { font-size: 15px; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.08); }
+        .history-item:last-child { border-bottom: none; }
+        .history-date { color: #aaa; font-size: 12px; margin-bottom: 6px; font-weight: 600; }
+        .history-details { display: flex; justify-content: space-between; align-items: center; font-weight: 700; color: #fff; }
+        .history-highlight { color: #ffb703; }
     </style>
 <body>
 
@@ -314,8 +324,22 @@
             <input type="text" id="p4-name" data-i18n-placeholder="placeholderP4" placeholder="玩家 4 名字 (可留空)">
         </div>
         <button id="start-btn" class="primary-btn" onclick="startGame()"><span class="material-icons">play_arrow</span><span data-i18n="btnStart">開始遊戲</span></button>
+        <button class="primary-btn btn-secondary" onclick="showHistory()" style="margin-top: 12px;">
+            <span class="material-icons">emoji_events</span><span data-i18n="btnHistory">歷史戰績</span>
+        </button>
+    </div> <div id="history-screen" class="hidden">
+        <h2 style="color: #ffb703;" data-i18n="titleHistory">🏆 生涯戰績</h2>
+        <div class="history-list" id="history-list">
+            </div>
+        <div style="display: flex; gap: 12px;">
+            <button class="primary-btn btn-secondary" onclick="closeHistory()" style="flex: 1;">
+                <span class="material-icons">arrow_back</span><span data-i18n="btnBack">返回大堂</span>
+            </button>
+            <button class="primary-btn" onclick="clearHistory()" style="flex: 1; background-color: #ff4d4d; color: white;">
+                <span class="material-icons">delete</span><span data-i18n="btnClearHistory">清除紀錄</span>
+            </button>
+        </div>
     </div>
-
     <div id="game-screen" class="hidden">
         <div class="status-bar">
             <span id="round-counter">進度: 1 / 5</span>
@@ -339,6 +363,7 @@
                 <span class="material-icons">skip_next</span>換歌
             </button>
         </div>
+
         <div id="lifeline-result" class="hidden"></div>
 
         <div id="combo-display" class="combo-text hidden"></div>
@@ -366,7 +391,12 @@
         <h2 id="end-title" style="color: #4CAF50;">🏆 遊戲結束！賽果出爐</h2>
         <div class="leaderboard" id="leaderboard"></div>
         
-        <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 25px;">
+        <div id="end-action-buttons" style="display: flex; flex-direction: column; gap: 12px; margin-top: 25px;">
+            
+            <button class="primary-btn" id="screenshot-btn" onclick="downloadResultImage()" style="background-color: #ff007f; color: white;">
+                <span class="material-icons">photo_camera</span><span data-i18n="btnScreenshot">一鍵截圖</span>
+            </button>
+            
             <button class="primary-btn" id="replay-btn" onclick="restartSameSettings()">
                 <span class="material-icons">replay</span><span data-i18n="btnReplay">🔄 原班人馬再玩一次</span>
             </button>
@@ -424,6 +454,13 @@
             btnReplay: '原班人馬再玩一次',
             btnHome: '返回主頁重設',
             listenApple: '在 Apple Music 聽完整版',
+            btnScreenshot: '一鍵截圖',
+            btnHistory: '歷史戰績',
+            titleHistory: '🏆 生涯戰績',
+            btnClearHistory: '清除紀錄',
+            btnBack: '返回大堂',
+            noHistory: '暫時無戰績紀錄，快啲去打返場啦！',
+            histModeSolo: '單人', histModeParty: '派對', histModeSurvival: '生存',
             // Game screen dynamic text
             loadingMsg: '正在尋找歌曲... (可能需要幾秒)',
             questionSong: '猜一猜這首歌是什麼？',
@@ -506,6 +543,13 @@
             btnReplay: 'Play Again (Same Players)',
             btnHome: 'Return to Home',
             listenApple: 'Listen on Apple Music',
+            btnScreenshot: 'Download Result Image',
+            btnHistory: 'Match History',
+            titleHistory: '🏆 Match History',
+            btnClearHistory: 'Clear History',
+            btnBack: 'Back to Lobby',
+            noHistory: 'No records found. Go play a game!',
+            histModeSolo: 'Solo', histModeParty: 'Party', histModeSurvival: 'Survival',
             // Game screen dynamic text
             loadingMsg: 'Finding a song... (may take a few seconds)',
             questionSong: 'Listen to the intro — which song is this?',
@@ -2181,6 +2225,8 @@
         
         triggerConfetti();
 
+        saveMatchHistory();
+
         const leaderboardDiv = document.getElementById("leaderboard");
         const endTitle = document.getElementById("end-title");
         leaderboardDiv.innerHTML = "";
@@ -2205,6 +2251,126 @@
                 item.innerHTML = `<span>${rankSymbol} ${player.name}</span> <span>${t('pointsLabel', player.score)}</span>`;
                 leaderboardDiv.appendChild(item);
             });
+        }
+    }
+
+    function downloadResultImage() {
+        const container = document.querySelector(".container");
+        const actionButtons = document.getElementById("end-action-buttons");
+        const screenshotBtn = document.getElementById("screenshot-btn");
+        const originalText = screenshotBtn.innerHTML;
+
+        // 1. 轉 Loading 狀態
+        screenshotBtn.innerHTML = `<span class="material-icons rotating">sync</span> 處理中...`;
+        screenshotBtn.disabled = true;
+
+        // 2. 暫時隱藏下面嗰堆按鈕，等張截圖乾淨啲
+        actionButtons.style.display = "none";
+
+        // 3. 截圖設定 (Scale: 2 提高清晰度，設定底色防止透明黑底)
+        html2canvas(container, {
+            scale: 2,
+            backgroundColor: "#1e1e1e", 
+            useCORS: true
+        }).then(canvas => {
+            // 4. 恢復顯示按鈕
+            actionButtons.style.display = "flex";
+            screenshotBtn.innerHTML = originalText;
+            screenshotBtn.disabled = false;
+
+            // 5. 轉換成圖片並觸發下載
+            let link = document.createElement('a');
+            let timestamp = new Date().getTime();
+            link.download = `MusicGuessr_Result_${timestamp}.png`;
+            link.href = canvas.toDataURL("image/png");
+            link.click();
+            
+        }).catch(err => {
+            console.error("截圖失敗:", err);
+            actionButtons.style.display = "flex";
+            screenshotBtn.innerHTML = originalText;
+            screenshotBtn.disabled = false;
+            alert(currentLang === 'zh' ? "截圖失敗，請重試！" : "Failed to capture image. Please try again.");
+        });
+    }
+// ================= 💾 本地歷史戰績系統 (Local Storage) =================
+    function saveMatchHistory() {
+        const mode = chosenMode;
+        let record = {
+            date: new Date().toISOString(),
+            mode: mode,
+            // 簡單記低第一個被選中嘅題庫
+            category: selectedCategories.length > 0 ? selectedCategories[0] : 'Unknown', 
+            players: players.map(p => ({ name: p.name, score: p.score }))
+        };
+
+        if (mode === 'survival') {
+            record.survivalRounds = currentRound - 1;
+        }
+
+        // 讀取舊紀錄，加新紀錄入去，最多保留 50 局
+        let history = JSON.parse(localStorage.getItem('musicGuessrHistory')) || [];
+        history.unshift(record); 
+        if (history.length > 50) history.pop(); 
+        
+        localStorage.setItem('musicGuessrHistory', JSON.stringify(history));
+    }
+
+    function showHistory() {
+        document.getElementById("start-screen").classList.add("hidden");
+        document.getElementById("history-screen").classList.remove("hidden");
+        
+        const listDiv = document.getElementById("history-list");
+        let history = JSON.parse(localStorage.getItem('musicGuessrHistory')) || [];
+        
+        if (history.length === 0) {
+            listDiv.innerHTML = `<div style="text-align:center; padding: 20px; color: #aaa;">${t('noHistory')}</div>`;
+            return;
+        }
+
+        listDiv.innerHTML = history.map(h => {
+            // 格式化日期
+            let dateStr = new Date(h.date).toLocaleString(currentLang === 'zh' ? 'zh-HK' : 'en-US', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+            
+            // 嘗試搵返按鈕上面嘅文字做顯示名
+            let catName = h.category; 
+            const catBtn = document.querySelector(`.category-pill[data-value="${h.category}"]`);
+            if (catBtn) {
+                // 清走 Emoji 等雜訊，保留純文字
+                catName = catBtn.innerText.replace(/[✨🎤🤡🔰]/g, '').trim(); 
+            }
+            
+            let modeName = h.mode === 'solo' ? t('histModeSolo') : (h.mode === 'party' ? t('histModeParty') : t('histModeSurvival'));
+            
+            let resultText = "";
+            if (h.mode === 'survival') {
+                resultText = `💀 ${h.survivalRounds} 題 | <span class="history-highlight">${h.players[0].score} 分</span>`;
+            } else {
+                // 搵出最高分嘅贏家
+                let winner = [...h.players].sort((a, b) => b.score - a.score)[0];
+                resultText = `👑 ${winner.name} (<span class="history-highlight">${winner.score} 分</span>)`;
+            }
+
+            return `
+            <div class="history-item">
+                <div class="history-date">${dateStr} • [${modeName}] ${catName}</div>
+                <div class="history-details">
+                    <span>${resultText}</span>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    function closeHistory() {
+        document.getElementById("history-screen").classList.add("hidden");
+        document.getElementById("start-screen").classList.remove("hidden");
+    }
+
+    function clearHistory() {
+        const confirmMsg = currentLang === 'zh' ? "確定要清除所有歷史紀錄？(無法復原)" : "Are you sure you want to clear all history? (Cannot be undone)";
+        if (confirm(confirmMsg)) {
+            localStorage.removeItem('musicGuessrHistory');
+            showHistory(); // 重新整理畫面
         }
     }
 </script>
