@@ -314,7 +314,7 @@
             </div>
         </div>
         <div class="setup-group">
-            <label data-i18n="labelMode">🎮 選擇遊玩模式</label>
+            <label option data-i18n="labelMode">🎮 選擇遊玩模式</label>
             <select id="mode-select" onchange="toggleModeUI()">
                 <option value="solo" data-i18n="modeSolo">👤 單人模式</option>
                 <option value="party" data-i18n="modeParty">👥 多人模式 (2-4人)</option>
@@ -336,7 +336,7 @@
             <input type="text" id="p1-name" data-i18n-placeholder="placeholderP1" placeholder="玩家 1 名字" value="玩家 A">
             <input type="text" id="p2-name" data-i18n-placeholder="placeholderP2" placeholder="玩家 2 名字" value="玩家 B">
             <input type="text" id="p3-name" data-i18n-placeholder="placeholderP3" placeholder="玩家 3 名字 (可留空)">
-            <input type="text" id="p4-name" data-i18n-placeholder="placeholderP4" placeholder="玩家 4 名字 (可留空)">
+            <input type="text" id="p4-name" placeholder="玩家 4 名字 (可留空)">
         </div>
         <button id="start-btn" class="primary-btn" onclick="startGame()" data-i18n="btnStart">開始遊戲</button>
     </div>
@@ -550,39 +550,26 @@
     }
 
     function applyLang() {
-        // Update html lang attribute
         document.documentElement.lang = currentLang === 'zh' ? 'zh-TW' : 'en';
-
-        // Update lang toggle button
         document.getElementById('lang-toggle-btn').textContent = t('langBtn');
-
-        // Update app title
         const titleSpan = document.getElementById('app-title-text'); if (titleSpan) titleSpan.textContent = t('appTitle').replace(/🎶 /, '');
         document.title = t('appTitle');
 
-        // Update all data-i18n elements
         document.querySelectorAll('[data-i18n]').forEach(el => {
             const key = el.getAttribute('data-i18n');
-            if (el.tagName === 'OPTION') {
-                el.textContent = t(key);
-            } else {
-                el.textContent = t(key);
-            }
+            el.textContent = t(key);
         });
 
-        // Update placeholders
         document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
             const key = el.getAttribute('data-i18n-placeholder');
             el.placeholder = t(key);
         });
 
-        // Update loading msg if visible
         const loadingMsg = document.getElementById('loading-msg');
         if (loadingMsg && !loadingMsg.classList.contains('hidden')) {
             loadingMsg.textContent = t('loadingMsg');
         }
 
-        // Update lifeline buttons text
         const aiBtn = document.getElementById('lifeline-ai-btn');
         const timeBtn = document.getElementById('lifeline-time-btn');
         if (aiBtn) aiBtn.textContent = t('btnAI');
@@ -598,13 +585,10 @@
     // END i18n System
     // ==========================================
 
-    // --- 時光機與跨年代歌手資料庫 ---
-    // 每個曲庫加入 minYear 同 maxYear
     const musicDatabase = {
         meme: {
             country: "us", themeColor: "#8a2be2", styleClass: "color-meme", minYear: 1970, maxYear: 2026,
             hitSongs: [
-// 🌐 殿堂級互聯網迷因 (Classic Internet)
                 { search: "Never Gonna Give You Up Rick Astley", display: "Rickroll (Rick Astley)" },
                 { search: "Astronomia Vicetone", display: "黑人抬棺 (Astronomia)" },
                 { search: "Roundabout Yes", display: "To Be Continued... (Roundabout)" },
@@ -622,8 +606,6 @@
                 { search: "The Next Episode Dr Dre", display: "Thug Life 墨鏡 (The Next Episode)" },
                 { search: "See You Again Wiz Khalifa", display: "保羅獲加再見 (See You Again)" },
                 { search: "We Are Number One LazyTown", display: "We Are Number One (LazyTown)" },
-                
-                // 📱 短片/洗腦神曲 (Shorts / TikTok Trends)
                 { search: "Oh No Capone", display: "TikTok 災難 (Oh No)" },
                 { search: "Despacito Luis Fonsi", display: "破億神曲 (Despacito)" },
                 { search: "Dragostea Din Tei O-Zone", display: "麥嘜舞 / 嘜阿喜 (Numa Numa)" },
@@ -659,8 +641,6 @@
                 { search: "Axel F Crazy Frog", display: "瘋狂青蛙 (Axel F)" },
                 { search: "Oh Yeah Yello", display: "太陽眼鏡 (Oh Yeah)" },
                 { search: "Bones Imagine Dragons", display: "The Boys 專用 (Bones)" },
-
-                // 🎧 遊戲與純音樂迷因 (Gaming / BGM / NCS)
                 { search: "Megalovania Toby Fox", display: "Sans Boss 戰 (Undertale)" },
                 { search: "San Andreas Theme Song", display: "GTA San Andreas Theme" },
                 { search: "Sandstorm Darude", display: "打機必備電音 (Sandstorm)" },
@@ -704,8 +684,6 @@
                 { search: "Specialist Persona 4", display: "鳴上悠跳舞 (Specialist)" },
                 { search: "Unwelcome School Blue Archive", display: "蔚藍檔案 (Unwelcome School)" },
                 { search: "Usagi Flap Blue Archive", display: "蔚藍檔案 兔子 (Usagi Flap)" },
-
-                // 🌸 動漫、Vaporwave 與 ACG 梗 (Anime & Weeb Memes)
                 { search: "il vento d'oro Yugo Kanno", display: "JoJo 處刑曲 (黃金之風)" },
                 { search: "Awaken Pillar Men Theme", display: "JoJo 月下三兄貴 (Awaken)" },
                 { search: "Running in the 90s Max Coveri", display: "頭文字D 飄移 (Running in the 90s)" },
@@ -790,8 +768,6 @@
                 { search: "DADDY ! DADDY ! DO ! Masayuki Suzuki", display: "DADDY ! DADDY ! DO ! (輝夜姬想讓人告白)" },
                 { search: "GIRI GIRI Masayuki Suzuki", display: "GIRI GIRI (輝夜姬想讓人告白)" },
                 { search: "チキチキバンバン QUEENDOM", display: "チキチキバンバン (派對咖孔明)" },
-
-                // === 🔥 2010-2019 殿堂級神曲 (巨人/SAO/MHA) ===
                 { search: "紅蓮の弓矢 Linked Horizon", display: "紅蓮の弓矢 (進擊的巨人)" },
                 { search: "心臓を捧げよ Linked Horizon", display: "心臓を捧げよ! (進擊的巨人)" },
                 { search: "自由の翼 Linked Horizon", display: "自由の翼 (進擊的巨人)" },
@@ -825,7 +801,7 @@
                 { search: "My Dearest supercell", display: "My Dearest (罪惡王冠)" },
                 { search: "The Everlasting Guilty Crown EGOIST", display: "The Everlasting Guilty Crown (罪惡王冠)" },
                 { search: "君の知らない物語 supercell", display: "君の知らない物語 (化物語)" },
-                { search: "恋愛サーキュレーション Kana Hanazawa", display: "恋愛サーキュレーション (化物語)" },
+                { search: "恋愛サーキュレーション Kane Hanazawa", display: "恋愛サーキュレーション (化物語)" },
                 { search: "白金ディスコ Yuka Iguchi", display: "白金ディスコ (偽物語)" },
                 { search: "コネクト ClariS", display: "コネクト (魔法少女小圓)" },
                 { search: "Magia Kalafina", display: "Magia (魔法少女小圓)" },
@@ -842,9 +818,7 @@
                 { search: "Black Catcher Survive Said The Prophet", display: "Black Catcher (黑色五葉草)" },
                 { search: "JUSTADICE MindaRyn", display: "JUSTADICE (關於我轉生變成史萊姆這檔事)" },
                 { search: "Snow halation μ's", display: "Snow halation (Love Live!)" },
-                { search: "僕らは今のなかで μ's", display: "僕らは今のなかで (Love Live!)" },
-
-                // === ⚔️ 2000-2009 黃金十年 (火影/死神/鋼鍊/銀魂) ===
+                { search: "僕らは今のなか為 μ's", display: "僕らは今のなかで (Love Live!)" },
                 { search: "ブルーバード いきものがかり", display: "ブルーバード (火影忍者疾風傳)" },
                 { search: "GO!!! FLOW", display: "GO!!! (火影忍者)" },
                 { search: "青春狂騒曲 FLOW", display: "青春狂騒曲 (火影忍者)" },
@@ -888,11 +862,9 @@
                 { search: "儚くも永久のカナシ UVERworld", display: "儚くも永久のカナシ (高達 00)" },
                 { search: "God knows... 平野綾", display: "God knows... (涼宮春日的憂鬱)" },
                 { search: "ハレ晴レユカイ 平野綾", display: "ハレ晴レユカイ (涼宮春日的憂鬱)" },
-                { search: "創聖のアクエリオン AKINO", display: "創聖のアクエリオン (創聖大天使)" },
+                { search: "創聖のアクエリオン AKINO", display: "創聖物理的アクエリオン (創聖大天使)" },
                 { search: "心絵 TRIPLANE", display: "心絵 (棒球大聯盟)" },
                 { search: "Snow fairy FUNKIST", display: "Snow fairy (魔導少年)" },
-
-                // === 💎 1980-1999 經典神作 (EVA/龍珠/男兒當入樽/數碼暴龍) ===
                 { search: "残酷な天使のテーゼ 高橋洋子", display: "殘酷天使的行動綱領 (新世紀福音戰士)" },
                 { search: "魂のルフラン 高橋洋子", display: "魂のルフラン (新世紀福音戰士)" },
                 { search: "世界が終るまでは WANDS", display: "直到世界盡頭… (男兒當入樽)" },
@@ -913,7 +885,7 @@
                 { search: "1/3の純情な感情 SIAM SHADE", display: "1/3の純情な感情 (浪客劍心)" },
                 { search: "HEART OF SWORD T.M.Revolution", display: "HEART OF SWORD (浪客劍心)" },
                 { search: "1/2 Makoto Kawamoto", display: "1/2 (浪客劍心)" },
-                { search: "微笑みの爆弾 Matsuko Mawatari", display: "微笑みの爆弾 (幽遊白書)" },
+                { search: "微笑みの爆弾 Matsuko Mawatari", display: "微笑みの爆彈 (幽遊白書)" },
                 { search: "アンバランスなKissをして Hiro Takahashi", display: "アンバランスなKissをして (幽遊白書)" },
                 { search: "Get Wild TM NETWORK", display: "Get Wild (城市獵人)" },
                 { search: "ペガサス幻想 MAKE-UP", display: "天馬座的幻想 (聖鬥士星矢)" },
@@ -921,7 +893,7 @@
                 { search: "おジャ魔女カーニバル!! MAHO堂", display: "おジャ魔女カーニバル!! (小魔女DoReMi)" },
                 { search: "プラチナ Maaya Sakamoto", display: "プラチナ (百變小櫻)" },
                 { search: "Catch You Catch Me Gumi", display: "Catch You Catch Me (百變小櫻)" },
-                { search: "謎 Miho Komatsu", display: "謎 (名偵探柯南)" },
+                { search: "謎 Miho Komatsu", display: "謎 (名偵探柯難)" },
                 { search: "ギリギリchop B'z", display: "ギリギリchop (名偵探柯南)" },
                 { search: "secret of my heart Mai Kuraki", display: "Secret of my heart (名偵探柯南)" },
                 { search: "おはよう。 Keno", display: "おはよう。 (全職獵人 1999)" },
@@ -972,7 +944,7 @@
                 { search: "アカリ 崎山蒼志", display: "アカリ (咒術迴戰)" },
                 { search: "give it back Cö shu Nie", display: "give it back (咒術迴戰)" },
                 { search: "Knock Out 岡崎体育", display: "Knock Out (肌肉魔法使)" },
-                { search: "絶絶絶絶対聖域 ano", display: "絶絶絶絶対聖域 (惡魔的破壞)" },
+                { search: "絶絶絶絕對聖域 ano", display: "絶絶絶絕對聖域 (惡魔的破壞)" },
                 { search: "ゼロステップ DOTAMA", display: "ゼロステップ (黑子的籃球)" },
                 { search: "No.1 DISH//", display: "No.1 (我的英雄學院)" },
                 { search: "ひたむき 崎山蒼志", display: "ひたむき (我的英雄學院)" },
@@ -982,8 +954,6 @@
                 { search: "恋ノ行方 Akari Akase", display: "恋ノ行方 (戀上換裝娃娃)" },
                 { search: "ダーリン 須田景凪", display: "ダーリン (躍動青春)" },
                 { search: "メロウ 須田景凪", display: "メロウ (躍動青春)" },
-
-                // === 🔥 2010-2019 黃金殿堂補充包 ===
                 { search: "INNOCENCE Eir Aoi", display: "INNOCENCE (刀劍神域)" },
                 { search: "courage Haruka Tomatsu", display: "courage (刀劍神域)" },
                 { search: "流星 Eir Aoi", display: "流星 (刀劍神域外傳 GGO)" },
@@ -1001,7 +971,7 @@
                 { search: "Merry-Go-Round MAN WITH A MISSION", display: "Merry-Go-Round (我的英雄學院)" },
                 { search: "スターマーカー KANA-BOON", display: "スターマーカー (我的英雄學院)" },
                 { search: "Ah Yeah!! Sukima Switch", display: "Ah Yeah!! (排球少年!!)" },
-                { search: "アイム・ア・ビリーバー SPYAIR", display: "アイム・ア・ビリーバー (排球少年!!)" },
+                { search: "アイ姆・ア・ビリーバー SPYAIR", display: "アイム・ア・ビリーバー (排球少年!!)" },
                 { search: "天地ガエシ NICO Touches the Walls", display: "天地ガエシ (排球少年!!)" },
                 { search: "決戦スピリット CHiCO with HoneyWorks", display: "決戦スピリット (排球少年!!)" },
                 { search: "ダイバー KANA-BOON", display: "ダイバー (火影忍者疾風傳)" },
@@ -1053,8 +1023,6 @@
                 { search: "みちしるべ 茅原実里", display: "みちしるべ (紫羅蘭永恆花園)" },
                 { search: "君のせい the peggies", display: "君のせい (青春豬頭少年)" },
                 { search: "ラブ・ドラマティック Masayuki Suzuki", display: "ラブ・ドラマティック (輝夜姬想讓人告白)" },
-
-                // === ⚔️ 2000-2009 黃金十年補充包 ===
                 { search: "解読不能 ジン", display: "解読不能 (反叛的魯路修)" },
                 { search: "瞳ノ翼 access", display: "瞳ノ翼 (反叛的魯路修)" },
                 { search: "WORLD END FLOW", display: "WORLD END (反叛的魯路修 R2)" },
@@ -1071,7 +1039,7 @@
                 { search: "涙のムコウ ステレオポニー", display: "涙のムコウ (機動戰士高達 00)" },
                 { search: "トライアングラー 坂本真綾", display: "トライアングラー (Macross Frontier)" },
                 { search: "ノーザンクロス May'n", display: "ノーザンクロス (Macross Frontier)" },
-                { search: "冒険でしょでしょ? 平野綾", display: "冒険でしょでしょ? (涼宮春日的憂鬱)" },
+                { search: "冒険對しょでしょ? 平野綾", display: "冒険でしょでしょ? (涼宮春日的憂鬱)" },
                 { search: "Cagayake!GIRLS 放課後ティータイム", display: "Cagayake!GIRLS (K-ON!)" },
                 { search: "Don't say lazy 放課後ティータイム", display: "Don't say \"lazy\" (K-ON!)" },
                 { search: "GO! GO! MANIAC 放課後ティータイム", display: "GO! GO! MANIAC (K-ON!!)" },
@@ -1119,8 +1087,6 @@
                 { search: "Grip! Every Little Thing", display: "Grip! (犬夜叉)" },
                 { search: "イタズラなKISS day after tomorrow", display: "イタズラなKISS (犬夜叉)" },
                 { search: "One Day, One Dream タッキー&翼", display: "One Day, One Dream (犬夜叉)" },
-
-                // === 💎 1980-1999 經典神作補充包 ===
                 { search: "Over Soul 林原めぐみ", display: "Over Soul (通靈王)" },
                 { search: "Northern lights 林原めぐみ", display: "Northern lights (通靈王)" },
                 { search: "アルミナ ナイトメア", display: "アルミナ (死亡筆記)" },
@@ -1154,7 +1120,7 @@
                 { search: "君がいない夏 DEEN", display: "君がいない夏 (名偵探柯南)" },
                 { search: "運命のルーレット廻して ZARD", display: "運命のルーレット廻して (名偵探柯南)" },
                 { search: "恋はスリル、ショック、サスペンス 愛内里菜", display: "恋はスリル、ショック、サスペンス (名偵探柯南)" },
-                { search: "風のららら 倉木麻衣", display: "風のららら (名偵探柯南)" },
+                { search: "風のららら 倉木麻衣", display: "風的ららら (名偵探柯南)" },
                 { search: "It's gonna rain! BONNIE PINK", display: "It's gonna rain! (浪客劍心)" },
                 { search: "涙は知っている 涼風真世", display: "涙は知っている (浪客劍心)" },
                 { search: "ダメ! 和泉容", display: "ダメ! (浪客劍心)" },
@@ -1215,7 +1181,6 @@
         canto80: {
             country: "hk", themeColor: "#ffb703", styleClass: "color-canto", minYear: 1980, maxYear: 1989,
             artists: [
-                // 巨星與殿堂級 (包括70年代出道)
                 { search: "張國榮", display: "張國榮" }, { search: "譚詠麟", display: "譚詠麟" },
                 { search: "梅艷芳", display: "梅艷芳" }, { search: "陳百強", display: "陳百強" },
                 { search: "林子祥", display: "林子祥" }, { search: "羅文", display: "羅文" },
@@ -1223,14 +1188,10 @@
                 { search: "許冠傑", display: "許冠傑" }, { search: "關正傑", display: "關正傑" },
                 { search: "汪明荃", display: "汪明荃" }, { search: "鄭少秋", display: "鄭少秋" },
                 { search: "葉麗儀", display: "葉麗儀" }, { search: "鍾鎮濤", display: "鍾鎮濤" },
-                
-                // 80年代天后與實力派
                 { search: "陳慧嫻", display: "陳慧嫻" }, { search: "林憶蓮", display: "林憶蓮" },
                 { search: "葉蒨文", display: "葉蒨文" }, { search: "鄺美雲", display: "鄺美雲" },
                 { search: "陳潔靈", display: "陳潔靈" }, { search: "劉美君", display: "劉美君" },
                 { search: "雷安娜", display: "雷安娜" }, { search: "蔣麗萍", display: "蔣麗萍" },
-                
-                // 80年代人氣男歌手與樂隊
                 { search: "呂方", display: "呂方" }, { search: "蔡楓華", display: "蔡楓華" },
                 { search: "杜德偉", display: "杜德偉" }, { search: "黃凱芹", display: "黃凱芹" },
                 { search: "Beyond", display: "Beyond" }, { search: "達明一派", display: "達明一派" },
@@ -1240,35 +1201,24 @@
         canto90: {
             country: "hk", themeColor: "#ffb703", styleClass: "color-canto", minYear: 1990, maxYear: 1999,
             artists: [
-// 👑 跨年代神級前輩 (80s出道，90s出產無數金曲)
                 { search: "張國榮", display: "張國榮" }, { search: "譚詠麟", display: "譚詠麟" },
                 { search: "梅艷芳", display: "梅艷芳" }, { search: "林子祥", display: "林子祥" },
                 { search: "葉蒨文", display: "葉蒨文" }, { search: "陳慧嫻", display: "陳慧嫻" },
                 { search: "關淑怡", display: "關淑怡" }, { search: "林憶蓮", display: "林憶蓮" },
-                
-                // 🌟 四大天王與 90s 殿堂級天后
                 { search: "張學友", display: "張學友" }, { search: "劉德華", display: "劉德華" },
                 { search: "黎明", display: "黎明" }, { search: "郭富城", display: "郭富城" },
                 { search: "王菲", display: "王菲" }, { search: "鄭秀文", display: "鄭秀文" },
                 { search: "彭羚", display: "彭羚" }, { search: "陳慧琳", display: "陳慧琳" },
-                
-                // 🎤 90s 實力派 K歌男歌手
                 { search: "李克勤", display: "李克勤" }, { search: "許志安", display: "許志安" },
                 { search: "古巨基", display: "古巨基" }, { search: "鄭伊健", display: "鄭伊健" },
                 { search: "蘇永康", display: "蘇永康" }, { search: "梁漢文", display: "梁漢文" },
                 { search: "杜德偉", display: "杜德偉" }, { search: "張衛健", display: "張衛健" },
                 { search: "鄭中基", display: "鄭中基" }, { search: "陳曉東", display: "陳曉東" },
-                
-                // 👗 90s 實力派女歌手 / 玉女掌門人
                 { search: "周慧敏", display: "周慧敏" }, { search: "黎瑞恩", display: "黎瑞恩" },
                 { search: "湯寶如", display: "湯寶如" }, { search: "梁詠琪", display: "梁詠琪" },
                 { search: "莫文蔚", display: "莫文蔚" }, { search: "楊千嬅", display: "楊千嬅" },
-                
-                // 🎸 經典樂隊與組合
                 { search: "Beyond", display: "Beyond" }, { search: "草蜢", display: "草蜢" },
                 { search: "太極", display: "太極" }, { search: "達明一派", display: "達明一派" },
-                
-                // 🚀 90s 末期出道超新星 (銜接千禧年代)
                 { search: "陳奕迅", display: "陳奕迅" }, { search: "謝霆鋒", display: "謝霆鋒" },
                 { search: "容祖兒", display: "容祖兒" }
             ]
@@ -1276,7 +1226,6 @@
         canto00: {
             country: "hk", themeColor: "#ffb703", styleClass: "color-canto", minYear: 2000, maxYear: 2009,
             artists: [
-                // --- 2000年代出道/爆紅 中流砥柱 ---
                 { search: "陳奕迅", display: "陳奕迅" }, { search: "容祖兒", display: "容祖兒" },
                 { search: "古巨基", display: "古巨基" }, { search: "楊千嬅", display: "楊千嬅" },
                 { search: "Twins", display: "Twins" }, { search: "謝霆鋒", display: "謝霆鋒" },
@@ -1290,8 +1239,6 @@
                 { search: "周柏豪", display: "周柏豪" }, { search: "鄭融", display: "鄭融" },
                 { search: "Boy'z", display: "Boy'z" }, { search: "Shine", display: "Shine" },
                 { search: "農夫", display: "農夫" }, { search: "何韻詩", display: "何韻詩" },
-                
-                // --- 跨年代神級歌手 (80/90年代出道，00年代依然掃獎) ---
                 { search: "張學友", display: "張學友" }, { search: "劉德華", display: "劉德華" },
                 { search: "黎明", display: "黎明" }, { search: "郭富城", display: "郭富城" },
                 { search: "陳慧琳", display: "陳慧琳" }, { search: "鄭秀文", display: "鄭秀文" },
@@ -1303,7 +1250,6 @@
         canto10: {
             country: "hk", themeColor: "#ffb703", styleClass: "color-canto", minYear: 2010, maxYear: 2019,
             artists: [
-// 🌟 跨年代天王天后 (2010s 依然極度活躍，出過無數 K 歌)
                 { search: "陳奕迅", display: "陳奕迅" }, { search: "容祖兒", display: "容祖兒" },
                 { search: "楊千嬅", display: "楊千嬅" }, { search: "古巨基", display: "古巨基" },
                 { search: "李克勤", display: "李克勤" }, { search: "鄭秀文", display: "鄭秀文" },
@@ -1311,33 +1257,25 @@
                 { search: "麥浚龍", display: "麥浚龍" }, { search: "側田", display: "側田" },
                 { search: "薛凱琪", display: "薛凱琪" }, { search: "吳雨霏", display: "吳雨霏" },
                 { search: "方皓玟", display: "方皓玟" }, { search: "周國賢", display: "周國賢" },
-                
-                // 🎤 2010s 中流砥柱 (男歌手)
                 { search: "張敬軒", display: "張敬軒" }, { search: "周柏豪", display: "周柏豪" },
                 { search: "陳柏宇", display: "陳柏宇" }, { search: "許廷鏗", display: "許廷鏗" },
                 { search: "林奕匡", display: "林奕匡" }, { search: "吳業坤", display: "吳業坤" },
                 { search: "洪卓立", display: "洪卓立" }, { search: "胡鴻鈞", display: "胡鴻鈞" },
                 { search: "馮允謙", display: "馮允謙" },
-                
-                // 💃 2010s 中流砥柱 (女歌手)
                 { search: "AGA", display: "AGA 江海迦" }, { search: "Gin Lee", display: "Gin Lee 李幸倪" },
                 { search: "連詩雅", display: "連詩雅" }, { search: "鄭欣宜", display: "鄭欣宜" },
                 { search: "JW", display: "JW 王灝兒" }, { search: "泳兒", display: "泳兒" },
                 { search: "G.E.M.", display: "G.E.M. 鄧紫棋" }, { search: "林二汶", display: "林二汶" },
                 { search: "菊梓喬", display: "HANA 菊梓喬" }, { search: "何韻詩", display: "何韻詩" },
-                
-                // 🎸 樂隊與組合 (Band & Group)
                 { search: "C AllStar", display: "C AllStar" }, { search: "Dear Jane", display: "Dear Jane" },
                 { search: "Supper Moment", display: "Supper Moment" }, { search: "RubberBand", display: "RubberBand" },
                 { search: "Mr.", display: "Mr." }, { search: "Twins", display: "Twins" },
-                { search: "ToNick", display: "ToNick" },  { search: "農夫", display: "農夫" },
-                { search: "Supper Moment", display: "Supper Moment" }
+                { search: "ToNick", display: "ToNick" }, { search: "農夫", display: "農夫" }
             ]
         },
         canto20: {
             country: "hk", themeColor: "#ffb703", styleClass: "color-canto", minYear: 2020, maxYear: 2026,
             artists: [
-                // 💥 20年代當紅新世代 & 組合
                 { search: "林家謙", display: "林家謙" }, { search: "MC 張天賦", display: "MC 張天賦" },
                 { search: "洪嘉豪", display: "洪嘉豪" }, { search: "陳蕾", display: "陳蕾" },
                 { search: "Gareth.T", display: "Gareth.T (湯令山)" }, { search: "Tyson Yoshi", display: "Tyson Yoshi" },
@@ -1352,16 +1290,12 @@
                 { search: "JFFT", display: "JFFT" }, { search: "農夫", display: "農夫" },
                 { search: "LMF", display: "LMF" }, { search: "廿四味", display: "廿四味" },
                 { search: "范梓謙", display: "四弟" }, { search: "Billy Choi", display: "Billy Choi" },
-                
-                // 🌟 10年代出道，20年代依然極度活躍 (中堅份子)
                 { search: "Dear Jane", display: "Dear Jane" }, { search: "AGA", display: "AGA 江海迦" },
                 { search: "Gin Lee", display: "Gin Lee 李幸倪" }, { search: "馮允謙", display: "馮允謙 Jay Fung" },
                 { search: "林奕匡", display: "林奕匡" }, { search: "許廷鏗", display: "許廷鏗" },
                 { search: "JW", display: "JW 王灝兒" }, { search: "泳兒", display: "泳兒" },
                 { search: "鄭欣宜", display: "鄭欣宜" }, { search: "陳柏宇", display: "陳柏宇" },
                 { search: "G.E.M.", display: "G.E.M. 鄧紫棋" }, 
-                
-                // 👑 殿堂級 / 前輩 (歷久常新，2020後依然有出新歌)
                 { search: "張敬軒", display: "張敬軒" }, { search: "陳奕迅", display: "陳奕迅" },
                 { search: "容祖兒", display: "容祖兒" }, { search: "鄭秀文", display: "鄭秀文" },
                 { search: "古巨基", display: "古巨基" }, { search: "謝安琪", display: "謝安琪" },
@@ -1436,8 +1370,8 @@
     let currentPlayerIndex = 0;
     let currentRound = 1;
     let maxRounds = 5;
-    let selectedCategories = []; // 改為陣列，支援多選
-    let currentThemeColor = "#b142ff"; // 預設大亂鬥顏色
+    let selectedCategories = []; 
+    let currentThemeColor = "#b142ff"; 
 
     let timerInterval;
     let timeSpent = 0;
@@ -1446,8 +1380,7 @@
     let isSurvivalDead = false;
     let retryCount = 0; 
     
-    // --- 新增嘅錦囊狀態變數 ---
-    let isSkipping = false; // 控制換歌是否繼承時間
+    let isSkipping = false; 
     let aiUsedThisRound = false;
     let fiftyFiftyUsedThisRound = false;
     let timeUsedThisRound = false;
@@ -1512,7 +1445,6 @@
             return;
         }
 
-        // 只保留設定預設音量 30%，刪除會搞死電腦瀏覽器嘅 play() 解鎖
         const musicPlayer = document.getElementById("music-player");
         musicPlayer.volume = 0.3; 
 
@@ -1523,14 +1455,13 @@
         document.getElementById("next-btn").style.color = currentThemeColor === "#ff4d4d" ? "white" : "#121212";
         document.getElementById("next-btn").className = 'primary-btn hidden';
 
-        // 計算開局代幣
         let initialTokens = 0;
         let playRounds = mode === 'survival' ? Infinity : parseInt(document.getElementById('round-select').value);
         if (mode === 'survival' || playRounds === 5) {
             initialTokens = 2;
         } else if (playRounds >= 10) {
             initialTokens = 3;
-        } // 3 回合會維持 0 個代幣
+        } 
         
         if (mode === 'survival') {
             maxRounds = Infinity; 
@@ -1599,7 +1530,6 @@
             data.results.forEach(track => {
                 if (track.previewUrl && track.releaseDate) {
                     const releaseYear = new Date(track.releaseDate).getFullYear();
-                    // 年代過濾器嚴格把關
                     if (releaseYear >= config.minYear && releaseYear <= config.maxYear) {
                         let cleanName = cleanTrackName(track.trackName);
                         if (!seenNames.has(cleanName.toLowerCase())) {
@@ -1616,12 +1546,10 @@
 
     function startTimer() {
         clearInterval(timerInterval);
-        // 如果唔係換歌，先重置時間
         if (!isSkipping) { timeSpent = 0; }
-        isSkipping = false; // 重置狀態
+        isSkipping = false; 
 
         document.getElementById("timer-container").classList.remove("hidden");
-        // ... (保留下方計時邏輯)
         const timerBar = document.getElementById("timer-bar");
         timerBar.style.width = "100%";
         timerBar.style.backgroundColor = "#4CAF50"; 
@@ -1655,24 +1583,21 @@
         
         const aiBtn = document.getElementById("lifeline-ai-btn");
         aiBtn.disabled = true;
-        aiBtn.innerText = "⏳ 運算中..."; // 營造緊張感
+        aiBtn.innerText = currentLang === 'zh' ? "⏳ 運算中..." : "⏳ Calculating..."; 
         
-        // 延遲 2.5 秒出結果 (消耗玩家時間)
         setTimeout(() => {
-            aiBtn.innerText = "🤖 已分析";
+            aiBtn.innerText = currentLang === 'zh' ? "🤖 已分析" : "🤖 Analyzed";
             const visibleBtns = Array.from(document.querySelectorAll(".option-btn:not(.hidden)"));
             if (visibleBtns.length === 0) return;
 
-            let resultHTML = `🤖 <b>MusicGuessr AI 分析：</b><br>`;
+            let resultHTML = `🤖 <b>${t('aiAnalysis')}</b><br>`;
             
             if (visibleBtns.length === 2) {
-                // 如果用咗 50/50，只分 100% 俾淨低兩個
-                let p1 = Math.floor(Math.random() * 40) + 30; // 30% - 70% 之間
+                let p1 = Math.floor(Math.random() * 40) + 30; 
                 let p2 = 100 - p1;
                 resultHTML += `【${visibleBtns[0].innerText}】: <b>${p1}%</b><br>`;
                 resultHTML += `【${visibleBtns[1].innerText}】: <b>${p2}%</b><br>`;
             } else {
-                // 原本 4 個選項嘅機率分配
                 let r1 = Math.random() * 35 + 5, r2 = Math.random() * 35 + 5;
                 let r3 = Math.random() * 35 + 5, r4 = Math.random() * 35 + 5;
                 let sum = r1 + r2 + r3 + r4;
@@ -1699,7 +1624,6 @@
         document.getElementById("token-display").innerText = `🪙 錦囊代幣: ${p.tokens} / 3`;
         document.getElementById("lifeline-5050-btn").disabled = true;
 
-        // 搵出所有錯誤答案並洗牌，隨機隱藏 2 個
         const allBtns = Array.from(document.querySelectorAll(".option-btn"));
         const wrongBtns = allBtns.filter(btn => btn.dataset.isCorrect === "false");
         const shuffledWrong = shuffleArray(wrongBtns);
@@ -1733,11 +1657,9 @@
         if (p.tokens <= 0) return;
         
         p.tokens--;
-        // 標記為 Skipping，阻止 playRound() 重置時間
         isSkipping = true; 
         document.getElementById("music-player").pause();
         
-        // 即刻抽過新題目
         playRound();
     }
 
@@ -1745,27 +1667,31 @@
         const currentPlayer = players[currentPlayerIndex];
         const mode = document.getElementById('mode-select').value;
         
-        // 只有非換歌狀態下先重置回合時間與限制
+        // ✨ 【核心修正】: 回合剛開始，依照當前語系，動態同步刷新「進度題數Bar」與「分數Bar」
+        if (mode === 'survival') {
+            document.getElementById("round-counter").textContent = t('survivalLabel', currentRound);
+        } else {
+            document.getElementById("round-counter").textContent = t('progressLabel', currentRound, maxRounds);
+        }
+        document.getElementById("score-display").textContent = t('scoreLabel', currentPlayer.score);
+
         if (!isSkipping) {
             roundMaxTime = 20;
             isExtendedTime = false;
         }
         
-        // 每一題重置錦囊使用狀態
         aiUsedThisRound = false;
         fiftyFiftyUsedThisRound = false;
         timeUsedThisRound = false;
 
-        // 更新代幣 UI
         const tokenDisplay = document.getElementById("token-display");
         if (maxRounds === 3 && mode !== 'survival') {
-            tokenDisplay.classList.add("hidden"); // 3回合隱藏代幣
+            tokenDisplay.classList.add("hidden"); 
         } else {
             tokenDisplay.innerText = `🪙 錦囊代幣: ${currentPlayer.tokens} / 3`;
             tokenDisplay.classList.remove("hidden");
         }
 
-        // 鎖定/解鎖錦囊按鈕
         document.getElementById("lifeline-ai-btn").disabled = false;
         document.getElementById("lifeline-ai-btn").innerText = t('btnAI') || "🤖 問 AI";
         
@@ -1803,14 +1729,12 @@
         musicPlayer.classList.add("hidden");
         questionText.innerText = t('loadingMsg');
 
-        // 🎯 核心：從玩家已選嘅題庫中，隨機抽 1 個題庫出嚟
         const randomCatKey = selectedCategories[Math.floor(Math.random() * selectedCategories.length)];
         const dbConfig = musicDatabase[randomCatKey];
         const isSongMode = !!dbConfig.hitSongs; 
         const currentPool = isSongMode ? dbConfig.hitSongs : dbConfig.artists;
 
         let randomItem = currentPool[Math.floor(Math.random() * currentPool.length)];
-        // 去 Apple Music 搵歌
         let tracks = await fetchTracksForThisQuestion(randomItem, dbConfig);
 
         if (tracks.length > 0) {
@@ -1820,11 +1744,9 @@
             let correctIdForCheck = null;
 
             if (isSongMode) {
-                // 🎶 【神曲大亂鬥模式】(Meme / 動漫)：只攞第一首最準嘅，其餘選項從自己題庫抽
                 correctTrackData = tracks[0];
                 correctIdForCheck = randomItem.search; 
                 
-                // 抽另外 3 首唔同嘅神曲做干擾
                 let otherOptions = shuffleArray(currentPool.filter(item => item.search !== randomItem.search)).slice(0, 3);
                 selectedOptions = shuffleArray([randomItem, ...otherOptions]);
 
@@ -1832,7 +1754,6 @@
                 questionText.innerText = t('questionSong');
 
             } else {
-                // 🎤 【原版歌手模式】(Jpop / Canto / Kpop)：從同一個歌手抽 4 首唔同嘅歌
                 if (tracks.length < 4) {
                     retryCount++;
                     if (retryCount > 3) { alert(t('alertServerBusy')); location.reload(); return; }
@@ -1849,16 +1770,14 @@
                 questionText.innerText = t('questionArtist', randomItem.display);
             }
 
-            // ⚠️ 統一喺攞完歌之後，先建立按鈕，加入 dataset 方便 50/50 識別錯歌
             selectedOptions.forEach(opt => {
                 let btn = document.createElement("button");
-                // 注意：isSongMode 時用 opt.search，原版用 opt.trackId
                 let currentBtnId = isSongMode ? opt.search : opt.trackId; 
                 
                 btn.innerText = isSongMode ? opt.display : opt.cleanName; 
                 btn.className = "option-btn";
                 btn.dataset.id = currentBtnId;
-                btn.dataset.isCorrect = (currentBtnId === correctIdForCheck) ? "true" : "false"; // 標記對錯
+                btn.dataset.isCorrect = (currentBtnId === correctIdForCheck) ? "true" : "false"; 
                 
                 btn.onclick = function() { checkAnswer(this, currentBtnId, correctIdForCheck, selectedOptions, currentPlayer, correctTrackData, isSongMode) };
                 optionsContainer.appendChild(btn);
@@ -1904,13 +1823,12 @@
             clickedBtn.classList.add("btn-correct");
             currentPlayer.combo++; 
 
-            // --- 新增：生存模式 5 連勝派代幣 (防通脹機制) ---
             if (mode === 'survival' && currentPlayer.combo > 0 && currentPlayer.combo % 5 === 0) {
                 if (currentPlayer.tokens < 3) {
                     currentPlayer.tokens++;
-                    questionText.innerHTML += `<span style="color:#4CAF50; font-size: 14px;">🎁 生存 5 連勝！獲得 1 個代幣！</span><br>`;
+                    questionText.innerHTML += currentLang === 'zh' ? `<span style="color:#4CAF50; font-size: 14px;">🎁 生存 5 連勝！獲得 1 個代幣！</span><br>` : `<span style="color:#4CAF50; font-size: 14px;">🎁 5 Streak! Gained 1 Token!</span><br>`;
                 } else {
-                    questionText.innerHTML += `<span style="color:#aaa; font-size: 14px;">🎒 滿 5 連勝，但代幣已達上限 (3個)！</span><br>`;
+                    questionText.innerHTML += currentLang === 'zh' ? `<span style="color:#aaa; font-size: 14px;">🎒 滿 5 連勝，但代幣已達上限 (3個)！</span><br>` : `<span style="color:#aaa; font-size: 14px;">🎒 5 Streak, but tokens are maxed out (3)!</span><br>`;
                 }
             }
             
@@ -1945,7 +1863,9 @@
             }
 
             currentPlayer.score += (basePoints + comboBonus);
-            document.getElementById("score-display").innerText = `分數: ${currentPlayer.score}`;
+            
+            // ✨ 【修正2】: 分數變更時同步套用 i18n 翻譯，防範英文版跳出中文「分數」
+            document.getElementById("score-display").textContent = t('scoreLabel', currentPlayer.score);
             questionText.innerHTML += `<br>${speedMsg}${comboMsg}`;
 
         } else {
@@ -1960,7 +1880,6 @@
             }
             comboDiv.classList.add("hidden"); 
             
-            // 標示正確答案
             allBtns.forEach((btn, index) => {
                 let currentBtnId = isSongMode ? optionList[index].search : optionList[index].trackId;
                 if (currentBtnId === correctId) {
@@ -1969,7 +1888,6 @@
             });
         }
 
-        // 顯示 Apple Music 連結
         if (correctTrackData && correctTrackData.trackViewUrl) {
             document.getElementById("apple-music-btn").href = correctTrackData.trackViewUrl;
             document.getElementById("apple-link-container").classList.remove("hidden");
