@@ -72,6 +72,7 @@
         .color-canto { color: #ffb703 !important; }
         .color-tw { color: #ff9800 !important; } 
         .color-kpop { color: #ff007f !important; }
+        .color-western { color: #1ed760 !important; }
         .color-meme { color: #8a2be2 !important; } 
         .color-artist { color: #ff4081 !important; }
         .color-survival { color: #ff4d4d !important; }
@@ -110,6 +111,7 @@
         .category-pill.selected.canto { background: #ffb703; color: #121212; box-shadow: 0 0 12px rgba(255, 183, 3, 0.6); }
         .category-pill.selected.tw { background: #ff9800; color: #121212; box-shadow: 0 0 12px rgba(255, 152, 0, 0.6); }
         .category-pill.selected.kpop { background: #ff007f; color: #fff; box-shadow: 0 0 12px rgba(255, 0, 127, 0.6); }
+        .category-pill.selected.western { background: #1ed760; color: #121212; box-shadow: 0 0 12px rgba(30, 215, 96, 0.6); }
         .category-pill.selected.artist-gold { background: linear-gradient(135deg, #ffd700, #ffaa00); color: #121212; box-shadow: 0 0 12px rgba(255, 215, 0, 0.6); }
         .category-pill.selected.artist { border-color: #ff4081; color: #fff; box-shadow: 0 0 10px rgba(255, 64, 129, 0.3); background: linear-gradient(135deg, rgba(255, 64, 129, 0.15), rgba(255, 64, 129, 0.02)); }
 
@@ -178,6 +180,36 @@
         .history-date { color: #aaa; font-size: 12px; margin-bottom: 6px; font-weight: 600; }
         .history-details { display: flex; justify-content: space-between; align-items: center; font-weight: 700; color: #fff; }
         .history-highlight { color: #ffb703; }
+
+        .icon-btn { position: absolute; top: 15px; left: 15px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #ddd; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; z-index: 100; }
+        .icon-btn:hover { background: rgba(255,255,255,0.2); color: #fff; transform: scale(1.05); }
+        .icon-btn .material-icons { font-size: 20px; }
+        
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 999; display: flex; align-items: center; justify-content: center; opacity: 1; transition: opacity 0.3s ease; }
+        .modal-overlay.hidden { opacity: 0; pointer-events: none; }
+        .modal-box { background: #1e1e1e; border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; width: 90%; max-width: 400px; padding: 25px; position: relative; box-shadow: 0 10px 40px rgba(0,0,0,0.6), 0 0 20px var(--theme-glow); text-align: left; transform: scale(1) translateY(0); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); max-height: 85vh; display: flex; flex-direction: column; }
+        .modal-overlay.hidden .modal-box { transform: scale(0.95) translateY(20px); }
+        
+        .close-btn { position: absolute; top: 15px; right: 15px; background: none; border: none; color: #888; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; }
+        .close-btn:hover { color: #fff; transform: rotate(90deg); }
+        
+        .help-tabs { display: flex; gap: 4px; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 2px; }
+        .help-tab { flex: 1; background: transparent; border: none; color: #888; font-weight: 600; font-size: 14px; padding: 8px 4px; cursor: pointer; transition: 0.2s; border-bottom: 2px solid transparent; font-family: inherit; }
+        .help-tab:hover { color: #ccc; }
+        .help-tab.active { color: var(--theme-color); border-bottom-color: var(--theme-color); }
+        
+        .help-content-container { overflow-y: auto; padding-right: 5px; }
+        .help-content-container::-webkit-scrollbar { width: 4px; }
+        .help-content-container::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+        .help-section { display: none; font-size: 14px; line-height: 1.6; color: #ddd; animation: fadeInRight 0.3s ease; }
+        .help-section.active { display: block; }
+        .help-section ul { padding-left: 22px; margin-top: 8px; margin-bottom: 15px; }
+        .help-section li { margin-bottom: 8px; }
+        .help-section h4 { color: #fff; margin-top: 18px; margin-bottom: 8px; font-size: 15px; display: flex; align-items: center; gap: 6px; }
+        .help-section h4:first-child { margin-top: 5px; }
+        .help-section b { color: #fff; }
+        
+        @keyframes fadeInRight { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
     </style>
 <body>
 
@@ -190,6 +222,7 @@
 
 <div class="container">
     <button class="lang-toggle" id="lang-toggle-btn" onclick="toggleLang()">EN</button>
+    <button class="icon-btn" id="help-btn" onclick="openHelp()"><span class="material-icons">help_outline</span></button>
     <h1 id="main-title" class="color-jpop"><span class="material-icons" style="font-size:32px;">music_note</span><span id="app-title-text">估歌派對 MusicGuessr</span></h1>
 
     <div id="start-screen">
@@ -216,11 +249,11 @@
                             <span class="material-icons arrow-icon">keyboard_arrow_down</span>
                         </div>
                         <div class="category-group-container collapsed" id="group-canto">
-                            <button class="category-pill canto" data-value="canto80" onclick="toggleCategory('canto80')">80s 金曲</button>
-                            <button class="category-pill canto" data-value="canto90" onclick="toggleCategory('canto90')">90s 黃金</button>
-                            <button class="category-pill canto" data-value="canto00" onclick="toggleCategory('canto00')">00s 千禧</button>
-                            <button class="category-pill canto" data-value="canto10" onclick="toggleCategory('canto10')">10s 新世代</button>
-                            <button class="category-pill canto" data-value="canto20" onclick="toggleCategory('canto20')">20-26 當代</button>
+                            <button class="category-pill canto" data-value="canto80" onclick="toggleCategory('canto80')">80s</button>
+                            <button class="category-pill canto" data-value="canto90" onclick="toggleCategory('canto90')">90s</button>
+                            <button class="category-pill canto" data-value="canto00" onclick="toggleCategory('canto00')">00s</button>
+                            <button class="category-pill canto" data-value="canto10" onclick="toggleCategory('canto10')">10s</button>
+                            <button class="category-pill canto" data-value="canto20" onclick="toggleCategory('canto20')">20s</button>
                             
                             <div style="width: 100%; height: 1px; background: rgba(255,255,255,0.1); margin: 8px 4px;"></div>
                             <div style="width: 100%; font-size: 12px; color: #888; margin-left: 6px; margin-bottom: 4px; font-weight: bold;" data-i18n="catArtist">✨ 歌手場</div>
@@ -232,13 +265,13 @@
 
                     <div class="accordion-item">
                         <div class="group-header" onclick="toggleAccordion('tw')">
-                            <span>🇹🇼 TW-Pop 台灣華語</span>
+                            <span>🇹🇼 TW-Pop 台灣流行</span>
                             <span class="material-icons arrow-icon">keyboard_arrow_down</span>
                         </div>
                         <div class="category-group-container collapsed" id="group-tw">
-                            <button class="category-pill tw" data-value="tw00" onclick="toggleCategory('tw00')">00s 千禧</button>
-                            <button class="category-pill tw" data-value="tw10" onclick="toggleCategory('tw10')">10s 新世代</button>
-                            <button class="category-pill tw" data-value="tw20" onclick="toggleCategory('tw20')">20-26 當代</button>
+                            <button class="category-pill tw" data-value="tw00" onclick="toggleCategory('tw00')">00s</button>
+                            <button class="category-pill tw" data-value="tw10" onclick="toggleCategory('tw10')">10s</button>
+                            <button class="category-pill tw" data-value="tw20" onclick="toggleCategory('tw20')">20s</button>
                             
                             <div style="width: 100%; height: 1px; background: rgba(255,255,255,0.1); margin: 8px 4px;"></div>
                             <div style="width: 100%; font-size: 12px; color: #888; margin-left: 6px; margin-bottom: 4px; font-weight: bold;" data-i18n="catArtist">✨ 歌手場</div>
@@ -254,9 +287,9 @@
                             <span class="material-icons arrow-icon">keyboard_arrow_down</span>
                         </div>
                         <div class="category-group-container collapsed" id="group-jpop">
-                            <button class="category-pill jpop" data-value="jpop00" onclick="toggleCategory('jpop00')">00s 千禧</button>
-                            <button class="category-pill jpop" data-value="jpop10" onclick="toggleCategory('jpop10')">10s 新世代</button>
-                            <button class="category-pill jpop" data-value="jpop20" onclick="toggleCategory('jpop20')">20-26 當代</button>
+                            <button class="category-pill jpop" data-value="jpop00" onclick="toggleCategory('jpop00')">00s</button>
+                            <button class="category-pill jpop" data-value="jpop10" onclick="toggleCategory('jpop10')">10s</button>
+                            <button class="category-pill jpop" data-value="jpop20" onclick="toggleCategory('jpop20')">20s</button>
                             
                             <div style="width: 100%; height: 1px; background: rgba(255,255,255,0.1); margin: 8px 4px;"></div>
                             <div style="width: 100%; font-size: 12px; color: #888; margin-left: 6px; margin-bottom: 4px; font-weight: bold;" data-i18n="catArtist">✨ 歌手場</div>
@@ -272,9 +305,9 @@
                             <span class="material-icons arrow-icon">keyboard_arrow_down</span>
                         </div>
                         <div class="category-group-container collapsed" id="group-kpop">
-                            <button class="category-pill kpop" data-value="kpop00" onclick="toggleCategory('kpop00')">00s 二代</button>
-                            <button class="category-pill kpop" data-value="kpop10" onclick="toggleCategory('kpop10')">10s 三四代</button>
-                            <button class="category-pill kpop" data-value="kpop20" onclick="toggleCategory('kpop20')">20-26 五代</button>
+                            <button class="category-pill kpop" data-value="kpop00" onclick="toggleCategory('kpop00')">00s</button>
+                            <button class="category-pill kpop" data-value="kpop10" onclick="toggleCategory('kpop10')">10s</button>
+                            <button class="category-pill kpop" data-value="kpop20" onclick="toggleCategory('kpop20')">20s</button>
 
                             <div style="width: 100%; height: 1px; background: rgba(255,255,255,0.1); margin: 8px 4px;"></div>
                             <div style="width: 100%; font-size: 12px; color: #888; margin-left: 6px; margin-bottom: 4px; font-weight: bold;" data-i18n="catArtist">✨ 歌手場</div>
@@ -287,9 +320,50 @@
                         </div>
                     </div>
 
+<div class="accordion-item">
+                        <div class="group-header" onclick="toggleAccordion('western')">
+                            <span>🇺🇸 Western-Pop 歐美流行</span>
+                            <span class="material-icons arrow-icon">keyboard_arrow_down</span>
+                        </div>
+                        <div class="category-group-container collapsed" id="group-western">
+                            <button class="category-pill western" data-value="western80" onclick="toggleCategory('western80')">80s</button>
+                            <button class="category-pill western" data-value="western90" onclick="toggleCategory('western90')">90s</button>
+                            <button class="category-pill western" data-value="western00" onclick="toggleCategory('western00')">00s</button>
+                            <button class="category-pill western" data-value="western10" onclick="toggleCategory('western10')">10s</button>
+                            <button class="category-pill western" data-value="western20" onclick="toggleCategory('western20')">20s</button>
+                            
+                            <div style="width: 100%; height: 1px; background: rgba(255,255,255,0.1); margin: 8px 4px;"></div>
+                            <div style="width: 100%; font-size: 12px; color: #888; margin-left: 6px; margin-bottom: 4px; font-weight: bold;" data-i18n="catArtist">✨ 歌手場</div>
+                            
+                            <button class="category-pill artist-gold" data-value="solo_taylor" onclick="toggleCategory('solo_taylor')">✨ Taylor Swift</button>
+                            <button class="category-pill artist-gold" data-value="solo_bruno" onclick="toggleCategory('solo_bruno')">✨ Bruno Mars</button>
+                            <button class="category-pill artist-gold" data-value="solo_mj" onclick="toggleCategory('solo_mj')">✨ Michael Jackson</button>
+                            <button class="category-pill artist-gold" data-value="solo_gaga" onclick="toggleCategory('solo_gaga')">✨ Lady Gaga</button>
+                        </div>
+                    </div>
+
                 </div>
                 <div class="scroll-fade-mask" id="scroll-mask"></div>
             </div>
+
+        <div id="help-modal" class="modal-overlay hidden">
+        <div class="modal-box">
+            <button class="close-btn" onclick="closeHelp()"><span class="material-icons">close</span></button>
+            <h2 data-i18n="helpTitle" style="margin-top: 5px; margin-bottom: 15px; font-size: 22px;">📖 遊戲說明</h2>
+            
+            <div class="help-tabs">
+                <button id="help-tab-btn-1" class="help-tab active" onclick="switchHelpTab(1)" data-i18n="helpTab1">玩法模式</button>
+                <button id="help-tab-btn-2" class="help-tab" onclick="switchHelpTab(2)" data-i18n="helpTab2">計分連擊</button>
+                <button id="help-tab-btn-3" class="help-tab" onclick="switchHelpTab(3)" data-i18n="helpTab3">錦囊代幣</button>
+            </div>
+            
+            <div class="help-content-container">
+                <div id="help-sec-1" class="help-section active" data-i18n-html="helpSec1_html"></div>
+                <div id="help-sec-2" class="help-section" data-i18n-html="helpSec2_html"></div>
+                <div id="help-sec-3" class="help-section" data-i18n-html="helpSec3_html"></div>
+            </div>
+        </div>
+    </div>
         </div>
 
         <div class="setup-group">
@@ -360,7 +434,7 @@
                 <span class="material-icons">hourglass_empty</span><span data-i18n="btnTime">⏳ 加時</span>
             </button>
             <button class="lifeline-btn" id="lifeline-skip-btn" onclick="useSkipLifeline()">
-                <span class="material-icons">skip_next</span>換歌
+                <span class="material-icons">skip_next</span><span data-i18n="btnSkip">換歌</span>
             </button>
         </div>
 
@@ -476,6 +550,10 @@
             // Lifelines
             btnAI: '🤖 問 AI',
             btnTime: '⏳ 加時神器',
+            btnSkip: '換歌',
+            tokenLabel: (n) => `🪙 錦囊代幣: ${n} / 3`,
+            defaultPlayerA: '玩家 A',
+            defaultPlayerB: '玩家 B',
             aiAnalysis: 'MusicGuessr AI 分析：',
             // Combo
             comboActive: (n, icon) => `${icon} ${n} 連擊中！`,
@@ -507,6 +585,14 @@
             alertServerBusy: '⚠️ Apple 伺服器繁忙，請重新開始！',
             alertServerBusy2: '⚠️ Apple Music 伺服器繁忙或歌曲不足，請返回大堂重新開始！',
             alertNeedTwoPlayers: '派對模式最少要有兩個玩家！',
+            // 👇 新增：遊戲說明翻譯 (ZH) 👇
+            helpTitle: '📖 遊戲說明',
+            helpTab1: '玩法模式',
+            helpTab2: '計分連擊',
+            helpTab3: '錦囊代幣',
+            helpSec1_html: '<h4>🎯 基礎玩法</h4><ul><li>聽歌估歌名。</li></ul><h4>👤 單人模式</h4><ul><li>自己挑戰 3 / 5 / 10 回合。</li></ul><h4>👥 多人模式 (2-4人)</h4><ul><li>玩家輪流作答（Pass & Play），最後鬥高分。</li></ul><h4>🔥 生存模式</h4><ul><li>無限題數，但<b>答錯一題即刻 Game Over</b>！</li></ul>',
+            helpSec2_html: '<h4>⏱️ 時間就係分數！</h4><ul><li>⚡ <b>秒殺 (0-3秒)：</b> +15 分</li><li>🚀 <b>極速 (3-5秒)：</b> +11 分</li><li>✅ <b>標準 (5-20秒)：</b> +10 分</li><li>⏳ <b>錦囊加時內答對：</b> +10 分</li><li>🐢 <b>逾時補底 (過咗20秒先答對)：</b> +5 分</li></ul><h4>🔥 連擊加成 (Combo)</h4><ul><li>由連續答對第 2 題開始，每次額外加分（2連擊+2分，3連擊+3分⋯⋯）。答錯會斷 Combo。</li></ul>',
+            helpSec3_html: '<h4>🪙 代幣派發</h4><ul><li>3回合：0個</li><li>5回合 / 生存模式：2個</li><li>10回合：3個</li><li><b>生存模式獎勵：</b>每達成 5 連擊，獎勵 1 個代幣（上限持有 3 個）。</li></ul><h4>🎒 錦囊功能</h4><ul><li>🤖 <b>問 AI：</b>每題可用 1 次，無須代幣。系統會模擬 AI 計算，俾出 4 個選項嘅虛擬勝率。</li><li>⚖️ <b>50/50 (扣 1 代幣)：</b>刪除兩個錯誤答案。</li><li>⏳ <b>加時 (扣 1 代幣)：</b>歌曲播放時間由 20 秒延長到 30 秒。</li><li>⏭️ <b>換歌 (扣 1 代幣)：</b>直接重新抽過一首歌（唔會扣回合數/斷Combo）。</li></ul>',
         },
         en: {
             // UI Labels
@@ -566,6 +652,10 @@
             // Lifelines
             btnAI: '🤖 Ask AI',
             btnTime: '⏳ Extra Time',
+            btnSkip: 'Skip Song',
+            tokenLabel: (n) => `🪙 Lifeline Tokens: ${n} / 3`,
+            defaultPlayerA: 'Player A',
+            defaultPlayerB: 'Player B',
             aiAnalysis: 'MusicGuessr AI Analysis:',
             // Combo
             comboActive: (n, icon) => `${icon} ${n}x Combo!`,
@@ -597,6 +687,14 @@
             alertServerBusy: '⚠️ Apple servers are busy. Please restart!',
             alertServerBusy2: '⚠️ Apple Music server busy or not enough songs. Please return to home!',
             alertNeedTwoPlayers: 'Party mode requires at least 2 players!',
+            // 👇 新增：遊戲說明翻譯 (EN) 👇
+            helpTitle: '📖 How to Play',
+            helpTab1: 'Modes',
+            helpTab2: 'Scoring',
+            helpTab3: 'Lifelines',
+            helpSec1_html: '<h4>🎯 Basic Rule</h4><ul><li>Listen to the intro and guess the song name.</li></ul><h4>👤 Solo Mode</h4><ul><li>Challenge yourself in 3 / 5 / 10 rounds.</li></ul><h4>👥 Party Mode (2-4 Players)</h4><ul><li>Take turns (Pass & Play) to answer. Highest score wins!</li></ul><h4>🔥 Survival Mode</h4><ul><li>Infinite rounds, but <b>one wrong answer = Game Over</b>!</li></ul>',
+            helpSec2_html: '<h4>⏱️ Speed is Key!</h4><ul><li>⚡ <b>Insta-kill (0-3s):</b> +15 pts</li><li>🚀 <b>Super Fast (3-5s):</b> +11 pts</li><li>✅ <b>Standard (5-20s):</b> +10 pts</li><li>⏳ <b>With Extra Time:</b> +10 pts</li><li>🐢 <b>Overtime (After 20s):</b> +5 pts</li></ul><h4>🔥 Combo Bonus</h4><ul><li>Bonus points start from the 2nd consecutive correct answer (+2 for 2x, +3 for 3x, etc.). Breaks upon a wrong answer.</li></ul>',
+            helpSec3_html: '<h4>🪙 Tokens</h4><ul><li>3 Rounds: 0 tokens</li><li>5 Rounds / Survival: 2 tokens</li><li>10 Rounds: 3 tokens</li><li><b>Survival Bonus:</b> Gain 1 token for every 5-streak (Max 3).</li></ul><h4>🎒 4 Lifelines</h4><ul><li>🤖 <b>Ask AI:</b> Free, once per question. Provides simulated win rates.</li><li>⚖️ <b>50/50 (1 Token):</b> Removes 2 wrong options.</li><li>⏳ <b>Extra Time (1 Token):</b> Extends play time from 20s to 30s.</li><li>⏭️ <b>Skip (1 Token):</b> Get a new song with no penalty to rounds or combos.</li></ul>',
         }
     };
 
@@ -622,20 +720,46 @@
             el.placeholder = t(key);
         });
 
+        document.querySelectorAll('[data-i18n-html]').forEach(el => {
+            const key = el.getAttribute('data-i18n-html');
+            el.innerHTML = t(key);
+        });
+
         const loadingMsg = document.getElementById('loading-msg');
         if (loadingMsg && !loadingMsg.classList.contains('hidden')) {
             loadingMsg.textContent = t('loadingMsg');
         }
 
-        const aiBtn = document.getElementById('lifeline-ai-btn');
-        const timeBtn = document.getElementById('lifeline-time-btn');
-        if (aiBtn) aiBtn.textContent = t('btnAI');
-        if (timeBtn) timeBtn.textContent = t('btnTime');
+        const tokenDisplay = document.getElementById("token-display");
+        if (tokenDisplay && players[currentPlayerIndex]) {
+            tokenDisplay.innerText = t('tokenLabel', players[currentPlayerIndex].tokens);
+        }
+
+        const p1 = document.getElementById('p1-name');
+        const p2 = document.getElementById('p2-name');
+        if (p1 && (p1.value === '玩家 A' || p1.value === 'Player A')) p1.value = t('defaultPlayerA');
+        if (p2 && (p2.value === '玩家 B' || p2.value === 'Player B')) p2.value = t('defaultPlayerB');
     }
 
     function toggleLang() {
         currentLang = currentLang === 'zh' ? 'en' : 'zh';
         applyLang();
+    }
+
+    function openHelp() {
+        document.getElementById('help-modal').classList.remove('hidden');
+    }
+
+    function closeHelp() {
+        document.getElementById('help-modal').classList.add('hidden');
+    }
+
+    function switchHelpTab(tabIndex) {
+        document.querySelectorAll('.help-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.help-section').forEach(s => s.classList.remove('active'));
+        
+        document.getElementById('help-tab-btn-' + tabIndex).classList.add('active');
+        document.getElementById('help-sec-' + tabIndex).classList.add('active');
     }
 
     // ==========================================
@@ -1534,6 +1658,93 @@
                 { search: "IU Love Poem", display: "IU", filterArtist: "IU" }
             ]
         },
+        western80: {
+            country: "us", themeColor: "#1ed760", styleClass: "color-western", minYear: 1980, maxYear: 1989,
+            artists: [
+                { search: "Michael Jackson", display: "Michael Jackson" }, { search: "Madonna", display: "Madonna" },
+                { search: "Queen", display: "Queen" }, { search: "Bon Jovi", display: "Bon Jovi" },
+                { search: "Whitney Houston", display: "Whitney Houston" }, { search: "Prince", display: "Prince" },
+                { search: "Guns N' Roses", display: "Guns N' Roses" }, { search: "U2", display: "U2" },
+                { search: "George Michael", display: "George Michael" }, { search: "Elton John", display: "Elton John" }
+            ]
+        },
+        western90: {
+            country: "us", themeColor: "#1ed760", styleClass: "color-western", minYear: 1990, maxYear: 1999,
+            artists: [
+                { search: "Backstreet Boys", display: "Backstreet Boys" }, { search: "Spice Girls", display: "Spice Girls" },
+                { search: "Nirvana", display: "Nirvana" }, { search: "Mariah Carey", display: "Mariah Carey" },
+                { search: "Oasis", display: "Oasis" }, { search: "Celine Dion", display: "Celine Dion" },
+                { search: "Britney Spears", display: "Britney Spears" }, { search: "Radiohead", display: "Radiohead" },
+                { search: "TLC", display: "TLC" }, { search: "Ricky Martin", display: "Ricky Martin" }
+            ]
+        },
+        western00: {
+            country: "us", themeColor: "#1ed760", styleClass: "color-western", minYear: 2000, maxYear: 2009,
+            artists: [
+                { search: "Eminem", display: "Eminem" }, { search: "Lady Gaga", display: "Lady Gaga" },
+                { search: "Coldplay", display: "Coldplay" }, { search: "Beyoncé", display: "Beyoncé" },
+                { search: "Linkin Park", display: "Linkin Park" }, { search: "Rihanna", display: "Rihanna" },
+                { search: "Maroon 5", display: "Maroon 5" }, { search: "Justin Timberlake", display: "Justin Timberlake" },
+                { search: "Avril Lavigne", display: "Avril Lavigne" }, { search: "Black Eyed Peas", display: "Black Eyed Peas" }
+            ]
+        },
+        western10: {
+            country: "us", themeColor: "#1ed760", styleClass: "color-western", minYear: 2010, maxYear: 2019,
+            artists: [
+                { search: "Taylor Swift", display: "Taylor Swift" }, { search: "Ed Sheeran", display: "Ed Sheeran" },
+                { search: "Justin Bieber", display: "Justin Bieber" }, { search: "Adele", display: "Adele" },
+                { search: "Drake", display: "Drake" }, { search: "Ariana Grande", display: "Ariana Grande" },
+                { search: "Bruno Mars", display: "Bruno Mars" }, { search: "Katy Perry", display: "Katy Perry" },
+                { search: "Post Malone", display: "Post Malone" }, { search: "The Weeknd", display: "The Weeknd" }
+            ]
+        },
+        western20: {
+            country: "us", themeColor: "#1ed760", styleClass: "color-western", minYear: 2020, maxYear: 2026,
+            artists: [
+                { search: "Dua Lipa", display: "Dua Lipa" }, { search: "Billie Eilish", display: "Billie Eilish" },
+                { search: "The Weeknd", display: "The Weeknd" }, { search: "Olivia Rodrigo", display: "Olivia Rodrigo" },
+                { search: "Harry Styles", display: "Harry Styles" }, { search: "Doja Cat", display: "Doja Cat" },
+                { search: "Lil Nas X", display: "Lil Nas X" }, { search: "SZA", display: "SZA" },
+                { search: "Taylor Swift", display: "Taylor Swift" }, { search: "Sabrina Carpenter", display: "Sabrina Carpenter" }
+            ]
+        },
+        solo_taylor: {
+            country: "us", themeColor: "#ffd700", styleClass: "color-western", minYear: 2006, maxYear: 2026,
+            artists: [
+                { search: "Taylor Swift", display: "Taylor Swift", filterArtist: "Taylor Swift" },
+                { search: "Taylor Swift 1989", display: "Taylor Swift", filterArtist: "Taylor Swift" },
+                { search: "Taylor Swift Red", display: "Taylor Swift", filterArtist: "Taylor Swift" },
+                { search: "Taylor Swift Reputation", display: "Taylor Swift", filterArtist: "Taylor Swift" },
+                { search: "Taylor Swift Folklore", display: "Taylor Swift", filterArtist: "Taylor Swift" },
+                { search: "Taylor Swift Midnights", display: "Taylor Swift", filterArtist: "Taylor Swift" }
+            ]
+        },
+        solo_bruno: {
+            country: "us", themeColor: "#ffd700", styleClass: "color-western", minYear: 2010, maxYear: 2026,
+            artists: [
+                { search: "Bruno Mars", display: "Bruno Mars", filterArtist: "Bruno Mars" },
+                { search: "Bruno Mars Unorthodox Jukebox", display: "Bruno Mars", filterArtist: "Bruno Mars" },
+                { search: "Bruno Mars 24K Magic", display: "Bruno Mars", filterArtist: "Bruno Mars" }
+            ]
+        },
+        solo_mj: {
+            country: "us", themeColor: "#ffd700", styleClass: "color-western", minYear: 1979, maxYear: 2001,
+            artists: [
+                { search: "Michael Jackson", display: "Michael Jackson", filterArtist: "Michael Jackson" },
+                { search: "Michael Jackson Thriller", display: "Michael Jackson", filterArtist: "Michael Jackson" },
+                { search: "Michael Jackson Bad", display: "Michael Jackson", filterArtist: "Michael Jackson" },
+                { search: "Michael Jackson Dangerous", display: "Michael Jackson", filterArtist: "Michael Jackson" }
+            ]
+        },
+        solo_gaga: {
+            country: "us", themeColor: "#ffd700", styleClass: "color-western", minYear: 2008, maxYear: 2026,
+            artists: [
+                { search: "Lady Gaga", display: "Lady Gaga", filterArtist: "Lady Gaga" },
+                { search: "Lady Gaga The Fame", display: "Lady Gaga", filterArtist: "Lady Gaga" },
+                { search: "Lady Gaga Born This Way", display: "Lady Gaga", filterArtist: "Lady Gaga" },
+                { search: "Lady Gaga Chromatica", display: "Lady Gaga", filterArtist: "Lady Gaga" }
+            ]
+        },
     };
     
     let players = [];
@@ -1544,6 +1755,11 @@
     let currentThemeColor = "#b142ff"; 
     let chosenMode = 'solo';    // 新增：預設單人模式
     let chosenRounds = 5;       // 新增：預設5回合 
+
+    let globalTrackCache = {}; 
+    let usedTrackIds = new Set(); 
+    let bgFetchQueue = [];
+    let isBgFetching = false;
 
     let timerInterval;
     let timeSpent = 0;
@@ -1752,6 +1968,8 @@
         document.getElementById("game-screen").classList.remove("hidden");
         if (mode === 'party') document.getElementById("turn-indicator").classList.remove("hidden");
         
+        startBackgroundFetch();
+
         playRound();
     }
 
@@ -1785,7 +2003,7 @@
         return name.split(' (')[0].split(' -')[0].split('【')[0].trim();
     }
 
-    async function fetchTracksForThisQuestion(artistObj, config) {
+    async function fetchFromApi(artistObj, config) {
         const url = `https://itunes.apple.com/search?term=${encodeURIComponent(artistObj.search)}&country=${config.country}&media=music&entity=song&limit=100&lang=zh_hk`;
         try {
             const response = await fetch(url);
@@ -1797,12 +2015,10 @@
                 if (track.previewUrl && track.releaseDate) {
                     const releaseYear = new Date(track.releaseDate).getFullYear();
                     
-                    // 🛡️ 新增：防翻唱/雜錦碟過濾機制 (Artist Strict Filter)
                     let artistMatch = true;
                     if (artistObj.filterArtist) {
                         const trackArtist = track.artistName.toLowerCase();
                         const targetArtist = artistObj.filterArtist.toLowerCase();
-                        // 只要歌手名唔包含目標字眼，就判定為翻唱或無關歌曲，直接踢走
                         if (!trackArtist.includes(targetArtist)) {
                             artistMatch = false;
                         }
@@ -1820,6 +2036,57 @@
             });
             return uniqueTracks;
         } catch (error) { return []; }
+    }
+
+    async function getTracksFromCacheOrApi(artistObj, config) {
+        const cacheKey = config.country + "|" + artistObj.search;
+        const isSongMode = !!config.hitSongs;
+        const requiredCount = isSongMode ? 1 : 4;
+
+        if (globalTrackCache[cacheKey]) {
+            let available = globalTrackCache[cacheKey].tracks.filter(t => !usedTrackIds.has(t.trackId));
+            if (available.length >= requiredCount) {
+                return available;
+            } else if (globalTrackCache[cacheKey].fetched) {
+                return [];
+            }
+        }
+
+        let tracks = await fetchFromApi(artistObj, config);
+        globalTrackCache[cacheKey] = { tracks: tracks, fetched: true };
+        
+        return tracks.filter(t => !usedTrackIds.has(t.trackId));
+    }
+
+    function startBackgroundFetch() {
+        bgFetchQueue = [];
+        selectedCategories.forEach(cat => {
+            const config = musicDatabase[cat];
+            const pool = config.hitSongs || config.artists;
+            pool.forEach(item => {
+                bgFetchQueue.push({ item, config });
+            });
+        });
+        bgFetchQueue = shuffleArray(bgFetchQueue); // 打亂次序隨機抽
+        processBackgroundQueue();
+    }
+
+    async function processBackgroundQueue() {
+        if (isBgFetching) return;
+        isBgFetching = true;
+
+        while (bgFetchQueue.length > 0) {
+            const { item, config } = bgFetchQueue.shift();
+            const cacheKey = config.country + "|" + item.search;
+
+            if (!globalTrackCache[cacheKey]) {
+                const tracks = await fetchFromApi(item, config);
+                globalTrackCache[cacheKey] = { tracks: tracks, fetched: true };
+                // 休息 1.5 秒再入貨，避免被 Apple 當黑客 Block IP
+                await new Promise(r => setTimeout(r, 1500));
+            }
+        }
+        isBgFetching = false;
     }
 
     function startTimer() {
@@ -1899,7 +2166,7 @@
         
         p.tokens--;
         fiftyFiftyUsedThisRound = true;
-        document.getElementById("token-display").innerText = `🪙 錦囊代幣: ${p.tokens} / 3`;
+        document.getElementById("token-display").innerText = t('tokenLabel', p.tokens);
         document.getElementById("lifeline-5050-btn").disabled = true;
 
         const allBtns = Array.from(document.querySelectorAll(".option-btn"));
@@ -1916,7 +2183,7 @@
         
         p.tokens--;
         timeUsedThisRound = true;
-        document.getElementById("token-display").innerText = `🪙 錦囊代幣: ${p.tokens} / 3`;
+        document.getElementById("token-display").innerText = t('tokenLabel', p.tokens);
         document.getElementById("lifeline-time-btn").disabled = true;
         
         roundMaxTime = 30; 
@@ -1967,7 +2234,7 @@
         if (maxRounds === 3 && mode !== 'survival') {
             tokenDisplay.classList.add("hidden"); 
         } else {
-            tokenDisplay.innerText = `🪙 錦囊代幣: ${currentPlayer.tokens} / 3`;
+            tokenDisplay.innerText = t('tokenLabel', currentPlayer.tokens);
             tokenDisplay.classList.remove("hidden");
         }
 
@@ -2014,7 +2281,7 @@
         const currentPool = isSongMode ? dbConfig.hitSongs : dbConfig.artists;
 
         let randomItem = currentPool[Math.floor(Math.random() * currentPool.length)];
-        let tracks = await fetchTracksForThisQuestion(randomItem, dbConfig);
+        let tracks = await getTracksFromCacheOrApi(randomItem, dbConfig);
 
         if (tracks.length > 0) {
             retryCount = 0;
@@ -2035,7 +2302,7 @@
             } else {
                 if (tracks.length < 4) {
                     retryCount++;
-                    if (retryCount > 3) { alert(t('alertServerBusy')); location.reload(); return; }
+                    if (retryCount > 8) { alert(currentLang === 'zh' ? "⚠️ 題庫已耗盡！請返回大堂重新選擇更多曲庫！" : "⚠️ Pool exhausted! Please select more categories."); location.reload(); return; }
                     playRound(); return;
                 }
                 
@@ -2048,6 +2315,8 @@
                 loadingMsg.classList.add("hidden");
                 questionText.innerText = t('questionArtist', randomItem.display);
             }
+
+            usedTrackIds.add(correctTrackData.trackId);
 
             selectedOptions.forEach(opt => {
                 let btn = document.createElement("button");
@@ -2065,15 +2334,13 @@
             musicPlayer.src = correctTrackData.previewUrl;
             musicPlayer.classList.remove("hidden");
             
-            // 👇 強化版播歌邏輯，防 iOS Block 👇
             musicPlayer.play().then(() => {
                 startTimer();
             }).catch((error)=> {
                 console.warn("Autoplay blocked by browser:", error);
-                // 萬一被 iOS Block 咗，顯示巨大嘅手動播放按鈕
                 const manualBtn = document.getElementById("manual-play-btn");
                 manualBtn.classList.remove("hidden");
-                musicPlayer.classList.add("hidden"); // 暫時隱藏原生播放器，費事干擾
+                musicPlayer.classList.add("hidden"); 
 
                 manualBtn.onclick = () => {
                     manualBtn.classList.add("hidden");
@@ -2082,7 +2349,6 @@
                     startTimer();
                 };
 
-                // 備用保險: 萬一玩家撳咗原生播放器嘅 Play
                 musicPlayer.onplay = () => { 
                     manualBtn.classList.add("hidden");
                     startTimer(); 
@@ -2092,7 +2358,7 @@
 
         } else {
             retryCount++;
-            if (retryCount > 3) {
+            if (retryCount > 8) {
                 alert(t('alertServerBusy2'));
                 location.reload();
                 return;
