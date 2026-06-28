@@ -371,6 +371,9 @@
         <div class="question-text" id="question-text">...</div>
         <div id="loading-msg" data-i18n="loadingMsg"><span class="material-icons rotating">sync</span>正在尋找歌曲... (可能需要幾秒)</div>
         
+        <button id="manual-play-btn" class="primary-btn hidden" style="background-color: #ff9800; color: #fff; margin-bottom: 20px; box-shadow: 0 0 15px rgba(255,152,0,0.5);">
+            <span class="material-icons">play_circle_filled</span> <span data-i18n="btnManualPlay">點擊播放音樂</span>
+        </button>
         <div class="timer-container hidden" id="timer-container">
             <div class="timer-bar" id="timer-bar"></div>
         </div>
@@ -461,6 +464,7 @@
             btnBack: '返回大堂',
             noHistory: '暫時無戰績紀錄，快啲去打返場啦！',
             histModeSolo: '單人', histModeParty: '派對', histModeSurvival: '生存',
+            btnManualPlay: '▶️ 點擊播放音樂',
             // Game screen dynamic text
             loadingMsg: '正在尋找歌曲... (可能需要幾秒)',
             questionSong: '猜一猜這首歌是什麼？',
@@ -550,6 +554,7 @@
             btnBack: 'Back to Lobby',
             noHistory: 'No records found. Go play a game!',
             histModeSolo: 'Solo', histModeParty: 'Party', histModeSurvival: 'Survival',
+            btnManualPlay: '▶️ Tap to Play Music',
             // Game screen dynamic text
             loadingMsg: 'Finding a song... (may take a few seconds)',
             questionSong: 'Listen to the intro — which song is this?',
@@ -1702,6 +1707,11 @@
         const musicPlayer = document.getElementById("music-player");
         musicPlayer.volume = 0.3; 
 
+        // 👇 iOS Autoplay Hack: 喺玩家點擊「開始」嗰一刻，強行初始化 Audio Element
+        musicPlayer.play().catch(()=>{});
+        musicPlayer.pause();
+        // 👆 Hack 完畢 👆
+
         // 修改：使用 Tab 的變數
         const mode = chosenMode;
         isSurvivalDead = false;
@@ -1934,7 +1944,8 @@
     async function playRound() {
         const currentPlayer = players[currentPlayerIndex];
         const mode = chosenMode;
-        
+
+        document.getElementById("manual-play-btn").classList.add("hidden");
         // ✨ 【核心修正】: 回合剛開始，依照當前語系，動態同步刷新「進度題數Bar」與「分數Bar」
         if (mode === 'survival') {
             document.getElementById("round-counter").textContent = t('survivalLabel', currentRound);
@@ -2054,10 +2065,29 @@
             musicPlayer.src = correctTrackData.previewUrl;
             musicPlayer.classList.remove("hidden");
             
+            // 👇 強化版播歌邏輯，防 iOS Block 👇
             musicPlayer.play().then(() => {
                 startTimer();
-            }).catch(()=> {
-                musicPlayer.onplay = () => { startTimer(); musicPlayer.onplay = null; };
+            }).catch((error)=> {
+                console.warn("Autoplay blocked by browser:", error);
+                // 萬一被 iOS Block 咗，顯示巨大嘅手動播放按鈕
+                const manualBtn = document.getElementById("manual-play-btn");
+                manualBtn.classList.remove("hidden");
+                musicPlayer.classList.add("hidden"); // 暫時隱藏原生播放器，費事干擾
+
+                manualBtn.onclick = () => {
+                    manualBtn.classList.add("hidden");
+                    musicPlayer.classList.remove("hidden");
+                    musicPlayer.play();
+                    startTimer();
+                };
+
+                // 備用保險: 萬一玩家撳咗原生播放器嘅 Play
+                musicPlayer.onplay = () => { 
+                    manualBtn.classList.add("hidden");
+                    startTimer(); 
+                    musicPlayer.onplay = null; 
+                };
             });
 
         } else {
