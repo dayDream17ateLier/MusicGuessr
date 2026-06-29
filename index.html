@@ -210,6 +210,25 @@
         .help-section b { color: #fff; }
         
         @keyframes fadeInRight { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
+
+        .sub-tab-container { display: flex; gap: 8px; justify-content: center; margin-top: 12px; animation: fadeIn 0.3s ease; }
+        .sub-tab { flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #888; padding: 10px; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .sub-tab.active { background: rgba(0, 210, 255, 0.15); color: #00d2ff; border-color: #00d2ff; box-shadow: 0 0 10px rgba(0, 210, 255, 0.2); }
+        
+        .buzz-container { display: flex; width: 100%; height: 260px; gap: 15px; margin-bottom: 20px; margin-top: 10px; }
+        .buzz-btn { flex: 1; border: none; border-radius: 24px; font-size: 28px; font-weight: 800; cursor: pointer; transition: 0.1s; color: white; box-shadow: 0 12px 0 rgba(0,0,0,0.4); text-shadow: 2px 2px 5px rgba(0,0,0,0.5); word-break: break-word; padding: 20px; display: flex; align-items: center; justify-content: center; line-height: 1.2; }
+        .buzz-btn:active:not(.locked) { transform: translateY(12px); box-shadow: 0 0 0 rgba(0,0,0,0.4); }
+        .buzz-btn.locked { opacity: 0.25; filter: grayscale(100%); pointer-events: none; transform: translateY(12px); box-shadow: 0 0 0 rgba(0,0,0,0.4); }
+        .buzz-left { background: linear-gradient(135deg, #ff3b30, #aa0000); }
+        .buzz-right { background: linear-gradient(135deg, #00aaff, #0055aa); }
+        .buzz-center { background: linear-gradient(135deg, #ffb703, #e65c00); font-size: 38px; letter-spacing: 2px; }
+
+        .who-buzzed-box { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 20px; }
+        .who-buzzed-btn { background: #333; color: white; padding: 16px; border-radius: 12px; font-size: 18px; font-weight: bold; border: 2px solid #555; cursor: pointer; flex: 1 1 40%; transition: 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .who-buzzed-btn:hover:not(.locked) { border-color: var(--theme-color); background: rgba(255,255,255,0.1); transform: translateY(-2px); }
+        .who-buzzed-btn.locked { opacity: 0.25; filter: grayscale(100%); pointer-events: none; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+
     </style>
 <body>
 
@@ -379,6 +398,11 @@
                     <span class="material-icons">local_fire_department</span><span data-i18n="modeSurvival">生存模式</span>
                 </button>
             </div>
+            
+            <div id="party-sub-modes" class="sub-tab-container hidden">
+                <button class="sub-tab active" data-value="pass" onclick="setPartyMode('pass')"><span data-i18n="subModePass">🛋️ 傳遞作答</span></button>
+                <button class="sub-tab" data-value="buzz" onclick="setPartyMode('buzz')"><span data-i18n="subModeBuzz">⚡ 搶答大戰</span></button>
+            </div>
         </div>
         
         <div class="setup-group" id="round-group">
@@ -445,6 +469,11 @@
         <div class="question-text" id="question-text">...</div>
         <div id="loading-msg" data-i18n="loadingMsg"><span class="material-icons rotating">sync</span>正在尋找歌曲... (可能需要幾秒)</div>
         
+        <div id="buzz-area" class="hidden"></div>
+        <div id="who-buzzed-area" class="hidden">
+            <h3 data-i18n="whoBuzzed" style="color: #ffb703; margin-bottom: 15px; font-size: 20px;">邊個搶？</h3>
+            <div class="who-buzzed-box" id="who-buzzed-box"></div>
+        </div>
         <button id="manual-play-btn" class="primary-btn hidden" style="background-color: #ff9800; color: #fff; margin-bottom: 20px; box-shadow: 0 0 15px rgba(255,152,0,0.5);">
             <span class="material-icons">play_circle_filled</span> <span data-i18n="btnManualPlay">點擊播放音樂</span>
         </button>
@@ -585,6 +614,15 @@
             alertServerBusy: '⚠️ Apple 伺服器繁忙，請重新開始！',
             alertServerBusy2: '⚠️ Apple Music 伺服器繁忙或歌曲不足，請返回大堂重新開始！',
             alertNeedTwoPlayers: '派對模式最少要有兩個玩家！',
+            subModePass: '🛋️ 傳遞作答',
+            subModeBuzz: '⚡ 搶答大戰',
+            whoBuzzed: '邊個搶？',
+            buzzingNow: (name) => `🚨 ${name} 搶答中！ (10秒)`,
+            msgBuzzCorrect: '✅ 搶答成功！',
+            msgStealCorrect: '🦅 執雞成功！',
+            msgBuzzWrong: '❌ 答錯扣分！',
+            msgTimeoutWrong: '❌ 逾時答錯！',
+            msgAllLocked: '💀 全軍覆沒！正確答案係：',
             // 👇 新增：遊戲說明翻譯 (ZH) 👇
             helpTitle: '📖 遊戲說明',
             helpTab1: '玩法模式',
@@ -687,6 +725,15 @@
             alertServerBusy: '⚠️ Apple servers are busy. Please restart!',
             alertServerBusy2: '⚠️ Apple Music server busy or not enough songs. Please return to home!',
             alertNeedTwoPlayers: 'Party mode requires at least 2 players!',
+            subModePass: '🛋️ Pass & Play',
+            subModeBuzz: '⚡ Buzz-in',
+            whoBuzzed: 'Who Buzzed?',
+            buzzingNow: (name) => `🚨 ${name}'s Turn! (10s)`,
+            msgBuzzCorrect: '✅ Correct!',
+            msgStealCorrect: '🦅 Steal Correct!',
+            msgBuzzWrong: '❌ Wrong! (-5 pts)',
+            msgTimeoutWrong: '❌ Timeout! (-5 pts)',
+            msgAllLocked: '💀 Everyone locked out! Answer:',
             // 👇 新增：遊戲說明翻譯 (EN) 👇
             helpTitle: '📖 How to Play',
             helpTab1: 'Modes',
@@ -1753,8 +1800,13 @@
     let maxRounds = 5;
     let selectedCategories = []; 
     let currentThemeColor = "#b142ff"; 
-    let chosenMode = 'solo';    // 新增：預設單人模式
-    let chosenRounds = 5;       // 新增：預設5回合 
+    let chosenMode = 'solo';
+    let chosenRounds = 5;
+    let chosenPartyMode = 'pass';
+    let isBuzzMode = false;
+    let lockedPlayers = new Set();
+    let activeBuzzerIndex = -1;
+    let currentQuestionText = "";
 
     let globalTrackCache = {}; 
     let usedTrackIds = new Set(); 
@@ -1766,7 +1818,8 @@
     let roundMaxTime = 20; 
     let isExtendedTime = false; 
     let isSurvivalDead = false;
-    let retryCount = 0; 
+    let retryCount = 0;
+    let buzzAttemptsThisRound = 0;
     
     let isSkipping = false; 
     let aiUsedThisRound = false;
@@ -1850,13 +1903,25 @@
         }
     }
 
-    // ================= Tab 按鈕切換邏輯 =================
     function setMode(modeValue) {
         chosenMode = modeValue;
         const buttons = document.querySelectorAll('#mode-tabs .tab-btn');
         buttons.forEach(btn => btn.classList.remove('active'));
         document.querySelector(`#mode-tabs .tab-btn[data-value="${modeValue}"]`).classList.add('active');
+        
+        const subModes = document.getElementById('party-sub-modes');
+        if (modeValue === 'party') {
+            subModes.classList.remove('hidden');
+        } else {
+            subModes.classList.add('hidden');
+        }
         toggleModeUI();
+    }
+
+    function setPartyMode(val) {
+        chosenPartyMode = val;
+        document.querySelectorAll('#party-sub-modes .sub-tab').forEach(b => b.classList.remove('active'));
+        document.querySelector(`#party-sub-modes .sub-tab[data-value="${val}"]`).classList.add('active');
     }
 
     function setRounds(roundValue) {
@@ -1914,11 +1979,12 @@
     }
 
     function startGame() {
-        // 修改：不再讀取 querySelectorAll，因為已由 toggleCategory 處理
         if (selectedCategories.length === 0) {
             alert(currentLang === 'zh' ? "最少要選擇一個題庫先可以開始啊！" : "Please select at least one category!");
             return;
         }
+
+        isBuzzMode = (chosenMode === 'party' && chosenPartyMode === 'buzz');
 
         const musicPlayer = document.getElementById("music-player");
         musicPlayer.volume = 0.3; 
@@ -2089,35 +2155,56 @@
         isBgFetching = false;
     }
 
-    function startTimer() {
+    function startTimer(resume = false) {
         clearInterval(timerInterval);
-        if (!isSkipping) { timeSpent = 0; }
+        if (!resume) { timeSpent = 0; }
         isSkipping = false; 
 
         document.getElementById("timer-container").classList.remove("hidden");
         const timerBar = document.getElementById("timer-bar");
-        timerBar.style.width = "100%";
-        timerBar.style.backgroundColor = "#4CAF50"; 
+        
+        let timeLeft = roundMaxTime - timeSpent;
+        timerBar.style.width = (timeLeft / roundMaxTime) * 100 + "%";
 
         timerInterval = setInterval(() => {
             timeSpent += 0.1;
-            let timeLeft = roundMaxTime - timeSpent;
+            timeLeft = roundMaxTime - timeSpent;
             
             if (timeLeft <= 0) {
                 clearInterval(timerInterval);
                 timerBar.style.width = "0%";
                 document.getElementById("music-player").pause();
+                
+                if (isBuzzMode) {
+                    buzzAttemptsThisRound++; // 逾時亦當作一次答錯嘗試
+                    let p = players[activeBuzzerIndex];
+                    p.score -= 5;
+                    document.getElementById("score-display").textContent = t('scoreLabel', p.score);
+                    
+                    const qText = document.getElementById("question-text");
+                    qText.innerHTML += `<br><span style="color:#ff4d4d;">${t('msgTimeoutWrong')}</span>`;
+                    
+                    if (buzzAttemptsThisRound >= 2) {
+                        qText.innerHTML += `<br><span style="color:#aaa;">${t('msgAllLocked')}</span>`;
+                        document.querySelectorAll(".option-btn").forEach(btn => {
+                            if (btn.dataset.isCorrect === "true") btn.classList.add("btn-correct");
+                            btn.disabled = true;
+                        });
+                        showNextButton();
+                    } else {
+                        setTimeout(() => {
+                            qText.innerText = currentQuestionText;
+                            renderBuzzArea();
+                            document.getElementById("music-player").play();
+                        }, 2000);
+                    }
+                }
             } else {
                 let percentage = (timeLeft / roundMaxTime) * 100;
                 timerBar.style.width = percentage + "%";
-                
-                if (timeSpent <= 10) {
-                    timerBar.style.backgroundColor = "#4CAF50"; 
-                } else if (timeSpent <= 15) {
-                    timerBar.style.backgroundColor = "#ff9800"; 
-                } else {
-                    timerBar.style.backgroundColor = "#ff4d4d"; 
-                }
+                if (timeSpent <= 10) timerBar.style.backgroundColor = "#4CAF50"; 
+                else if (timeSpent <= 15) timerBar.style.backgroundColor = "#ff9800"; 
+                else timerBar.style.backgroundColor = "#ff4d4d"; 
             }
         }, 100);
     }
@@ -2161,20 +2248,114 @@
     }
 
     function use5050Lifeline() {
-        const p = players[currentPlayerIndex];
+        const p = players[isBuzzMode ? activeBuzzerIndex : currentPlayerIndex];
         if (p.tokens <= 0 || fiftyFiftyUsedThisRound) return;
         
         p.tokens--;
         fiftyFiftyUsedThisRound = true;
         document.getElementById("token-display").innerText = t('tokenLabel', p.tokens);
-        document.getElementById("lifeline-5050-btn").disabled = true;
-
-        const allBtns = Array.from(document.querySelectorAll(".option-btn"));
-        const wrongBtns = allBtns.filter(btn => btn.dataset.isCorrect === "false");
-        const shuffledWrong = shuffleArray(wrongBtns);
         
-        shuffledWrong[0].classList.add("hidden");
-        shuffledWrong[1].classList.add("hidden");
+        const btn5050 = document.getElementById("lifeline-5050-btn");
+        btn5050.disabled = true;
+        
+        // 觸發時停機制
+        clearInterval(timerInterval);
+        btn5050.innerHTML = `<span class="material-icons rotating">sync</span> ...`;
+
+        setTimeout(() => {
+            btn5050.innerHTML = `<span class="material-icons">splitscreen</span>50/50`;
+            const allBtns = Array.from(document.querySelectorAll(".option-btn"));
+            const wrongBtns = allBtns.filter(btn => btn.dataset.isCorrect === "false");
+            const shuffledWrong = shuffleArray(wrongBtns);
+            
+            shuffledWrong[0].classList.add("hidden");
+            shuffledWrong[1].classList.add("hidden");
+
+            startTimer(true); // 恢復倒數
+        }, 1500);
+    }
+
+    function renderBuzzArea() {
+        const area = document.getElementById('buzz-area');
+        area.innerHTML = '';
+        area.classList.remove('hidden');
+        document.getElementById('options').classList.add('hidden');
+        document.getElementById('who-buzzed-area').classList.add('hidden');
+        document.getElementById('turn-indicator').classList.add('hidden');
+        document.getElementById('token-display').classList.add('hidden');
+        document.getElementById("lifeline-5050-btn").disabled = true;
+        
+        let container = document.createElement('div');
+        container.className = 'buzz-container';
+        
+        if (players.length === 2) {
+            let btnA = document.createElement('button');
+            btnA.className = `buzz-btn buzz-left ${lockedPlayers.has(0) ? 'locked' : ''}`;
+            btnA.innerText = players[0].name;
+            btnA.onclick = () => triggerBuzz(0);
+            
+            let btnB = document.createElement('button');
+            btnB.className = `buzz-btn buzz-right ${lockedPlayers.has(1) ? 'locked' : ''}`;
+            btnB.innerText = players[1].name;
+            btnB.onclick = () => triggerBuzz(1);
+            
+            container.appendChild(btnA);
+            container.appendChild(btnB);
+        } else {
+            let isAllLocked = lockedPlayers.size === players.length;
+            let btnCenter = document.createElement('button');
+            btnCenter.className = `buzz-btn buzz-center ${isAllLocked ? 'locked' : ''}`;
+            btnCenter.innerHTML = "<span class='material-icons' style='font-size:40px; margin-right:8px;'>notifications_active</span>BUZZ!";
+            btnCenter.onclick = () => showWhoBuzzed();
+            container.appendChild(btnCenter);
+        }
+        area.appendChild(container);
+    }
+
+    function showWhoBuzzed() {
+        document.getElementById("music-player").pause();
+        document.getElementById('buzz-area').classList.add('hidden');
+        const whoArea = document.getElementById('who-buzzed-area');
+        const box = document.getElementById('who-buzzed-box');
+        box.innerHTML = '';
+        players.forEach((p, idx) => {
+            let btn = document.createElement('button');
+            btn.className = `who-buzzed-btn ${lockedPlayers.has(idx) ? 'locked' : ''}`;
+            btn.innerText = p.name;
+            btn.onclick = () => triggerBuzz(idx);
+            box.appendChild(btn);
+        });
+        whoArea.classList.remove('hidden');
+    }
+
+    function triggerBuzz(playerIndex) {
+        activeBuzzerIndex = playerIndex;
+        document.getElementById("music-player").pause();
+        
+        document.getElementById('buzz-area').classList.add('hidden');
+        document.getElementById('who-buzzed-area').classList.add('hidden');
+        
+        let p = players[activeBuzzerIndex];
+        const turnInd = document.getElementById('turn-indicator');
+        turnInd.innerText = t('buzzingNow', p.name);
+        turnInd.classList.remove('hidden');
+        
+        const tokenDisp = document.getElementById('token-display');
+        tokenDisp.innerText = t('tokenLabel', p.tokens);
+        tokenDisp.classList.remove('hidden');
+        
+        fiftyFiftyUsedThisRound = false;
+        document.getElementById("lifeline-5050-btn").disabled = (p.tokens <= 0);
+        document.getElementById('options').classList.remove('hidden');
+        
+        document.querySelectorAll(".option-btn").forEach(btn => {
+            if (!btn.classList.contains("btn-wrong")) {
+                btn.disabled = false;
+            }
+        });
+        
+        roundMaxTime = 10;
+        startTimer(false);
     }
 
     function useTimeLifeline() {
@@ -2212,8 +2393,14 @@
         const currentPlayer = players[currentPlayerIndex];
         const mode = chosenMode;
 
+        // 重置搶答狀態
+        lockedPlayers.clear();
+        activeBuzzerIndex = -1;
+        document.getElementById('buzz-area').classList.add('hidden');
+        document.getElementById('who-buzzed-area').classList.add('hidden');
+        document.getElementById('options').classList.remove('hidden');
+
         document.getElementById("manual-play-btn").classList.add("hidden");
-        // ✨ 【核心修正】: 回合剛開始，依照當前語系，動態同步刷新「進度題數Bar」與「分數Bar」
         if (mode === 'survival') {
             document.getElementById("round-counter").textContent = t('survivalLabel', currentRound);
         } else {
@@ -2221,34 +2408,39 @@
         }
         document.getElementById("score-display").textContent = t('scoreLabel', currentPlayer.score);
 
-        if (!isSkipping) {
-            roundMaxTime = 20;
-            isExtendedTime = false;
-        }
+        if (!isSkipping) { roundMaxTime = 20; isExtendedTime = false; }
         
-        aiUsedThisRound = false;
-        fiftyFiftyUsedThisRound = false;
-        timeUsedThisRound = false;
+        aiUsedThisRound = false; fiftyFiftyUsedThisRound = false; timeUsedThisRound = false;
 
         const tokenDisplay = document.getElementById("token-display");
         if (maxRounds === 3 && mode !== 'survival') {
             tokenDisplay.classList.add("hidden"); 
         } else {
             tokenDisplay.innerText = t('tokenLabel', currentPlayer.tokens);
-            tokenDisplay.classList.remove("hidden");
+            if (!isBuzzMode) tokenDisplay.classList.remove("hidden");
         }
 
-        document.getElementById("lifeline-ai-btn").disabled = false;
-        document.getElementById("lifeline-ai-btn").innerText = t('btnAI') || "🤖 問 AI";
-        
         let outOfTokens = currentPlayer.tokens <= 0;
-        document.getElementById("lifeline-5050-btn").disabled = outOfTokens;
-        document.getElementById("lifeline-time-btn").disabled = outOfTokens || isExtendedTime;
-        document.getElementById("lifeline-skip-btn").disabled = outOfTokens;
+        if (isBuzzMode) {
+            document.getElementById('lifeline-ai-btn').classList.add('hidden');
+            document.getElementById('lifeline-time-btn').classList.add('hidden');
+            document.getElementById('lifeline-skip-btn').classList.add('hidden');
+            document.getElementById('turn-indicator').classList.add('hidden');
+            tokenDisplay.classList.add('hidden');
+        } else {
+            document.getElementById('lifeline-ai-btn').classList.remove('hidden');
+            document.getElementById('lifeline-time-btn').classList.remove('hidden');
+            document.getElementById('lifeline-skip-btn').classList.remove('hidden');
+            document.getElementById("lifeline-ai-btn").disabled = false;
+            document.getElementById("lifeline-ai-btn").innerText = t('btnAI') || "🤖 問 AI";
+            document.getElementById("lifeline-5050-btn").disabled = outOfTokens;
+            document.getElementById("lifeline-time-btn").disabled = outOfTokens || isExtendedTime;
+            document.getElementById("lifeline-skip-btn").disabled = outOfTokens;
+        }
+
         document.getElementById("lifeline-result").classList.add("hidden");
-    
         const comboDiv = document.getElementById("combo-display");
-        if (currentPlayer.combo >= 2) {
+        if (!isBuzzMode && currentPlayer.combo >= 2) {
             let fireIcon = currentPlayer.combo >= 3 ? '🔥' : '✨';
             comboDiv.innerText = t('comboActive', currentPlayer.combo, fireIcon);
             comboDiv.classList.remove("hidden");
@@ -2292,77 +2484,55 @@
             if (isSongMode) {
                 correctTrackData = tracks[0];
                 correctIdForCheck = randomItem.search; 
-                
                 let otherOptions = shuffleArray(currentPool.filter(item => item.search !== randomItem.search)).slice(0, 3);
                 selectedOptions = shuffleArray([randomItem, ...otherOptions]);
-
-                loadingMsg.classList.add("hidden");
-                questionText.innerText = t('questionSong');
-
+                currentQuestionText = t('questionSong');
             } else {
-                if (tracks.length < 4) {
-                    retryCount++;
-                    if (retryCount > 8) { alert(currentLang === 'zh' ? "⚠️ 題庫已耗盡！請返回大堂重新選擇更多曲庫！" : "⚠️ Pool exhausted! Please select more categories."); location.reload(); return; }
-                    playRound(); return;
-                }
-                
+                if (tracks.length < 4) { retryCount++; if (retryCount > 8) { alert(t('alertServerBusy2')); location.reload(); return; } playRound(); return; }
                 tracks = shuffleArray(tracks);
                 selectedOptions = tracks.slice(0, 4); 
                 let correctIndex = Math.floor(Math.random() * 4);
                 correctTrackData = selectedOptions[correctIndex];
                 correctIdForCheck = correctTrackData.trackId;
-
-                loadingMsg.classList.add("hidden");
-                questionText.innerText = t('questionArtist', randomItem.display);
+                currentQuestionText = t('questionArtist', randomItem.display);
             }
 
             usedTrackIds.add(correctTrackData.trackId);
+            loadingMsg.classList.add("hidden");
+            questionText.innerText = currentQuestionText;
 
             selectedOptions.forEach(opt => {
                 let btn = document.createElement("button");
                 let currentBtnId = isSongMode ? opt.search : opt.trackId; 
-                
                 btn.innerText = isSongMode ? opt.display : opt.cleanName; 
                 btn.className = "option-btn";
                 btn.dataset.id = currentBtnId;
                 btn.dataset.isCorrect = (currentBtnId === correctIdForCheck) ? "true" : "false"; 
-                
                 btn.onclick = function() { checkAnswer(this, currentBtnId, correctIdForCheck, selectedOptions, currentPlayer, correctTrackData, isSongMode) };
                 optionsContainer.appendChild(btn);
             });
 
-            musicPlayer.src = correctTrackData.previewUrl;
-            musicPlayer.classList.remove("hidden");
-            
-            musicPlayer.play().then(() => {
-                startTimer();
-            }).catch((error)=> {
-                console.warn("Autoplay blocked by browser:", error);
-                const manualBtn = document.getElementById("manual-play-btn");
-                manualBtn.classList.remove("hidden");
-                musicPlayer.classList.add("hidden"); 
-
-                manualBtn.onclick = () => {
-                    manualBtn.classList.add("hidden");
-                    musicPlayer.classList.remove("hidden");
-                    musicPlayer.play();
-                    startTimer();
-                };
-
-                musicPlayer.onplay = () => { 
-                    manualBtn.classList.add("hidden");
-                    startTimer(); 
-                    musicPlayer.onplay = null; 
-                };
-            });
-
+            if (isBuzzMode) {
+                buzzAttemptsThisRound = 0;
+                lockedPlayers.clear();
+                renderBuzzArea();
+                musicPlayer.src = correctTrackData.previewUrl;
+                musicPlayer.classList.remove("hidden");
+                musicPlayer.play().catch(console.warn);
+            } else {
+                musicPlayer.src = correctTrackData.previewUrl;
+                musicPlayer.classList.remove("hidden");
+                musicPlayer.play().then(() => { startTimer(); }).catch(()=> {
+                    const manualBtn = document.getElementById("manual-play-btn");
+                    manualBtn.classList.remove("hidden");
+                    musicPlayer.classList.add("hidden"); 
+                    manualBtn.onclick = () => { manualBtn.classList.add("hidden"); musicPlayer.classList.remove("hidden"); musicPlayer.play(); startTimer(); };
+                    musicPlayer.onplay = () => { manualBtn.classList.add("hidden"); startTimer(); musicPlayer.onplay = null; };
+                });
+            }
         } else {
             retryCount++;
-            if (retryCount > 8) {
-                alert(t('alertServerBusy2'));
-                location.reload();
-                return;
-            }
+            if (retryCount > 8) { alert(t('alertServerBusy2')); location.reload(); return; }
             playRound(); 
         }
     }
@@ -2372,7 +2542,6 @@
         const musicPlayer = document.getElementById("music-player");
         const questionText = document.getElementById("question-text");
         const comboDiv = document.getElementById("combo-display");
-        const mode = chosenMode;
         
         clearInterval(timerInterval); 
         allBtns.forEach(btn => btn.disabled = true);
@@ -2383,118 +2552,113 @@
         document.getElementById("lifeline-time-btn").disabled = true;
         document.getElementById("lifeline-skip-btn").disabled = true;
 
+        let activePlayer = isBuzzMode ? players[activeBuzzerIndex] : currentPlayer;
+
         if (selectedId === correctId) {
-            // 加入 pulse-wave 波浪特效
             clickedBtn.classList.add("btn-correct", "pulse-wave");
-            currentPlayer.combo++; 
-
-            if (mode === 'survival' && currentPlayer.combo > 0 && currentPlayer.combo % 5 === 0) {
-                if (currentPlayer.tokens < 3) {
-                    currentPlayer.tokens++;
-                    questionText.innerHTML += currentLang === 'zh' ? `<span style="color:#4CAF50; font-size: 14px;">🎁 生存 5 連勝！獲得 1 個代幣！</span><br>` : `<span style="color:#4CAF50; font-size: 14px;">🎁 5 Streak! Gained 1 Token!</span><br>`;
-                } else {
-                    questionText.innerHTML += currentLang === 'zh' ? `<span style="color:#aaa; font-size: 14px;">🎒 滿 5 連勝，但代幣已達上限 (3個)！</span><br>` : `<span style="color:#aaa; font-size: 14px;">🎒 5 Streak, but tokens are maxed out (3)!</span><br>`;
-                }
-            }
             
-            let basePoints = 0;
-            let speedMsg = "";
-
-            if (timeSpent <= 3) {
-                basePoints = 15;
-                speedMsg = `<span style="color:#ffb703;">${t('msgInstakill')}</span>`;
-            } else if (timeSpent <= 5) {
-                basePoints = 11;
-                speedMsg = `<span style="color:#4CAF50;">${t('msgSpeed')}</span>`;
-            } else if (timeSpent <= 20) {
-                basePoints = 10;
-                speedMsg = `<span style="color:#aaa;">${t('msgCorrect')}</span>`;
-            } else if (timeSpent > 20 && isExtendedTime) {
-                basePoints = 10;
-                speedMsg = `<span style="color:#00d2ff;">${t('msgExtended')}</span>`;
+            if (isBuzzMode) {
+                let isSteal = lockedPlayers.size > 0;
+                let pts = isSteal ? 5 : 10;
+                activePlayer.score += pts;
+                document.getElementById("score-display").textContent = t('scoreLabel', activePlayer.score);
+                questionText.innerHTML += `<br><span style="color:#4CAF50; font-weight: bold;">${isSteal ? t('msgStealCorrect') : t('msgBuzzCorrect')} (+${pts})</span>`;
+                showNextButton();
             } else {
-                basePoints = 5;
-                speedMsg = `<span style="color:#ff4d4d;">${t('msgTimeout')}</span>`;
+                activePlayer.combo++; 
+                if (chosenMode === 'survival' && activePlayer.combo > 0 && activePlayer.combo % 5 === 0) {
+                    if (activePlayer.tokens < 3) { activePlayer.tokens++; questionText.innerHTML += currentLang === 'zh' ? `<span style="color:#4CAF50; font-size: 14px;">🎁 生存 5 連勝！獲得 1 個代幣！</span><br>` : `<span style="color:#4CAF50; font-size: 14px;">🎁 5 Streak! Gained 1 Token!</span><br>`; } 
+                    else { questionText.innerHTML += currentLang === 'zh' ? `<span style="color:#aaa; font-size: 14px;">🎒 滿 5 連勝，但代幣已達上限 (3個)！</span><br>` : `<span style="color:#aaa; font-size: 14px;">🎒 5 Streak, tokens maxed (3)!</span><br>`; }
+                }
+                
+                let basePoints = 0; let speedMsg = "";
+                if (timeSpent <= 3) { basePoints = 15; speedMsg = `<span style="color:#ffb703;">${t('msgInstakill')}</span>`; } 
+                else if (timeSpent <= 5) { basePoints = 11; speedMsg = `<span style="color:#4CAF50;">${t('msgSpeed')}</span>`; } 
+                else if (timeSpent <= 20) { basePoints = 10; speedMsg = `<span style="color:#aaa;">${t('msgCorrect')}</span>`; } 
+                else if (timeSpent > 20 && isExtendedTime) { basePoints = 10; speedMsg = `<span style="color:#00d2ff;">${t('msgExtended')}</span>`; } 
+                else { basePoints = 5; speedMsg = `<span style="color:#ff4d4d;">${t('msgTimeout')}</span>`; }
+
+                let comboBonus = 0; let comboMsg = "";
+                if (activePlayer.combo >= 2) {
+                    comboBonus = activePlayer.combo;
+                    let fireIcon = activePlayer.combo >= 3 ? "🔥" : "✨";
+                    comboMsg = ` <span style="color:#ff9800;">| ${t('msgCombo', activePlayer.combo, comboBonus)}</span>`;
+                    comboDiv.innerText = t('comboAchieved', activePlayer.combo, fireIcon);
+                    comboDiv.classList.remove("hidden");
+                }
+                activePlayer.score += (basePoints + comboBonus);
+                document.getElementById("score-display").textContent = t('scoreLabel', activePlayer.score);
+                questionText.innerHTML += `<br>${speedMsg}${comboMsg}`;
+                showNextButton();
             }
-
-            let comboBonus = 0;
-            let comboMsg = "";
-            if (currentPlayer.combo >= 2) {
-                comboBonus = currentPlayer.combo;
-                let fireIcon = currentPlayer.combo >= 3 ? "🔥" : "✨";
-                comboMsg = ` <span style="color:#ff9800;">| ${t('msgCombo', currentPlayer.combo, comboBonus)}</span>`;
-                comboDiv.innerText = t('comboAchieved', currentPlayer.combo, fireIcon);
-                comboDiv.classList.remove("hidden");
-            }
-
-            currentPlayer.score += (basePoints + comboBonus);
-            
-            // ✨ 【修正2】: 分數變更時同步套用 i18n 翻譯，防範英文版跳出中文「分數」
-            document.getElementById("score-display").textContent = t('scoreLabel', currentPlayer.score);
-            questionText.innerHTML += `<br>${speedMsg}${comboMsg}`;
-
         } else {
-            currentPlayer.combo = 0; 
-            // 加入 shake 震動特效
             clickedBtn.classList.add("btn-wrong", "shake");
             
-            if (mode === 'survival') {
-                isSurvivalDead = true;
-                questionText.innerHTML += `<br><span style="color:#ff4d4d;">${t('msgSurvivalDead')}</span>`;
-            } else {
-                questionText.innerHTML += `<br><span style="color:#ff4d4d;">${t('msgWrong')}</span>`;
-            }
-            comboDiv.classList.add("hidden"); 
-            
-            allBtns.forEach((btn, index) => {
-                let currentBtnId = isSongMode ? optionList[index].search : optionList[index].trackId;
-                if (currentBtnId === correctId) {
-                    btn.classList.add("btn-correct");
+            if (isBuzzMode) {
+                buzzAttemptsThisRound++;
+                activePlayer.score -= 5;
+                document.getElementById("score-display").textContent = t('scoreLabel', activePlayer.score);
+                
+                questionText.innerHTML += `<br><span style="color:#ff4d4d; font-weight: bold;">${t('msgBuzzWrong')}</span>`;
+                
+                if (buzzAttemptsThisRound >= 2) {
+                    questionText.innerHTML += `<br><span style="color:#aaa;">${t('msgAllLocked')}</span>`;
+                    allBtns.forEach(btn => { if (btn.dataset.isCorrect === "true") btn.classList.add("btn-correct"); });
+                    showNextButton();
+                } else {
+                    setTimeout(() => {
+                        questionText.innerText = currentQuestionText;
+                        renderBuzzArea();
+                        document.getElementById("music-player").play();
+                    }, 2000);
                 }
-            });
+            } else {
+                activePlayer.combo = 0; 
+                if (chosenMode === 'survival') { isSurvivalDead = true; questionText.innerHTML += `<br><span style="color:#ff4d4d;">${t('msgSurvivalDead')}</span>`; } 
+                else { questionText.innerHTML += `<br><span style="color:#ff4d4d;">${t('msgWrong')}</span>`; }
+                comboDiv.classList.add("hidden"); 
+                allBtns.forEach(btn => { if (btn.dataset.isCorrect === "true") btn.classList.add("btn-correct"); });
+                showNextButton();
+            }
         }
 
-        if (correctTrackData && correctTrackData.trackViewUrl) {
-            document.getElementById("apple-music-btn").href = correctTrackData.trackViewUrl;
-            document.getElementById("apple-link-container").classList.remove("hidden");
+        if (!isBuzzMode || (isBuzzMode && (selectedId === correctId || lockedPlayers.size === players.length))) {
+            if (correctTrackData && correctTrackData.trackViewUrl) {
+                document.getElementById("apple-music-btn").href = correctTrackData.trackViewUrl;
+                document.getElementById("apple-link-container").classList.remove("hidden");
+            }
         }
+    }
 
-        let isLastPlayer = (currentPlayerIndex === players.length - 1);
+    function showNextButton() {
+        let isLastPlayer = isBuzzMode ? false : (currentPlayerIndex === players.length - 1);
         let isLastRound = (currentRound === maxRounds);
         let nextBtn = document.getElementById("next-btn");
         
-        if (mode === 'survival' && isSurvivalDead) {
+        if (chosenMode === 'survival' && isSurvivalDead) {
             nextBtn.innerText = t('nextSurvivalEnd');
-        } else if (isLastPlayer && isLastRound) {
+        } else if ((isLastPlayer || isBuzzMode) && isLastRound) {
             nextBtn.innerText = t('nextResults');
-        } else if (isLastPlayer) {
-            nextBtn.innerText = mode === 'solo' || mode === 'survival' ? t('nextQuestion') : t('nextRound');
+        } else if (isLastPlayer || isBuzzMode) {
+            nextBtn.innerText = chosenMode === 'solo' || chosenMode === 'survival' || isBuzzMode ? t('nextQuestion') : t('nextRound');
         } else {
             nextBtn.innerText = t('nextPass', players[currentPlayerIndex + 1].name);
         }
-        
         nextBtn.classList.remove("hidden");
     }
 
     function nextTurn() {
-        const mode = chosenMode;
-        if (mode === 'survival' && isSurvivalDead) {
-            endGame();
+        if (chosenMode === 'survival' && isSurvivalDead) { endGame(); return; }
+
+        if (isBuzzMode) {
+            currentRound++;
+            if (currentRound > maxRounds) endGame(); else playRound();
             return;
         }
 
         currentPlayerIndex++;
-        
-        if (currentPlayerIndex >= players.length) {
-            currentPlayerIndex = 0;
-            currentRound++;
-        }
-
-        if (currentRound > maxRounds) {
-            endGame();
-        } else {
-            playRound();
-        }
+        if (currentPlayerIndex >= players.length) { currentPlayerIndex = 0; currentRound++; }
+        if (currentRound > maxRounds) endGame(); else playRound();
     }
 
     function triggerConfetti() {
