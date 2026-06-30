@@ -461,7 +461,7 @@
 
         <div class="studio-footer">
             <span>Developed by</span>
-            <img src="./studio-logo.png" alt="Logo" class="studio-footer-logo">
+            <img src="studio-logo.png" alt="Logo" class="studio-footer-logo">
             <span class="studio-name">dayDream AteLier</span>
         </div>
     </div> <div id="history-screen" class="hidden">
@@ -2343,17 +2343,34 @@
             const data = await response.json();
             let uniqueTracks = [];
             let seenNames = new Set();
+            
+            // 👇 新增：判斷依家係咪「動漫/迷因」嘅歌單模式 (因為歌單模式係搵歌名，唔可以鎖死歌手)
+            const isSongMode = !!config.hitSongs; 
 
             data.results.forEach(track => {
                 if (track.previewUrl && track.releaseDate) {
                     const releaseYear = new Date(track.releaseDate).getFullYear();
                     
                     let artistMatch = true;
-                    if (artistObj.filterArtist) {
-                        const trackArtist = track.artistName.toLowerCase();
-                        const targetArtist = artistObj.filterArtist.toLowerCase();
-                        if (!trackArtist.includes(targetArtist)) {
-                            artistMatch = false;
+                    
+                    // 👇 新增：如果係「歌手模式」，啟動全自動防衛過濾網
+                    if (!isSongMode) {
+                        let trackArtist = track.artistName.toLowerCase();
+                        
+                        if (artistObj.filterArtist) {
+                            if (!trackArtist.includes(artistObj.filterArtist.toLowerCase())) {
+                                artistMatch = false;
+                            }
+                        } else {
+                            // 系統自動用 Display Name (中/日文) 或 Search Keyword (英文) 做雙重保險
+                            let cleanDisplay = artistObj.display.split(' (')[0].toLowerCase();
+                            let cleanSearch = artistObj.search.split(' ')[0].toLowerCase();
+                            
+                            // 只要 Apple 俾返嚟嘅歌手名，唔包含我哋要搵嘅字眼 (例如「瑛人」唔包含「Perfume」)
+                            // 就當係撞名或者素人翻唱，直接踢走！
+                            if (!trackArtist.includes(cleanDisplay) && !trackArtist.includes(cleanSearch)) {
+                                artistMatch = false;
+                            }
                         }
                     }
 
@@ -2373,22 +2390,16 @@
 
     async function getTracksFromCacheOrApi(artistObj, config) {
         const cacheKey = config.country + "|" + artistObj.search;
-        const isSongMode = !!config.hitSongs;
-        const requiredCount = isSongMode ? 1 : 4;
 
-        if (globalTrackCache[cacheKey]) {
-            let available = globalTrackCache[cacheKey].tracks.filter(t => !usedTrackIds.has(t.trackId));
-            if (available.length >= requiredCount) {
-                return available;
-            } else if (globalTrackCache[cacheKey].fetched) {
-                return [];
-            }
+        // 如果已經 Cache 咗，直接俾返全個池嘅歌出嚟 (唔好過濾舊歌)
+        if (globalTrackCache[cacheKey] && globalTrackCache[cacheKey].fetched) {
+            return globalTrackCache[cacheKey].tracks;
         }
 
         let tracks = await fetchFromApi(artistObj, config);
         globalTrackCache[cacheKey] = { tracks: tracks, fetched: true };
         
-        return tracks.filter(t => !usedTrackIds.has(t.trackId));
+        return tracks;
     }
 
     function startBackgroundFetch() {
@@ -2740,27 +2751,54 @@
         const currentPool = isSongMode ? dbConfig.hitSongs : dbConfig.artists;
 
         let randomItem = currentPool[Math.floor(Math.random() * currentPool.length)];
-        let tracks = await getTracksFromCacheOrApi(randomItem, dbConfig);
+        let allTracks = await getTracksFromCacheOrApi(randomItem, dbConfig);
 
-        if (tracks.length > 0) {
-            retryCount = 0;
+        if (allTracks.length > 0) {
             let selectedOptions = [];
             let correctTrackData = null;
             let correctIdForCheck = null;
 
             if (isSongMode) {
-                correctTrackData = tracks[0];
+                // 動漫/迷因模式：搵一首未出過嘅 Version 做正確答案
+                let unusedTracks = allTracks.filter(t => !usedTrackIds.has(t.trackId));
+                if (unusedTracks.length === 0) {
+                    triggerTrueEnding();
+                    return;
+                }
+                retryCount = 0;
+                correctTrackData = unusedTracks[0];
                 correctIdForCheck = randomItem.search; 
                 let otherOptions = shuffleArray(currentPool.filter(item => item.search !== randomItem.search)).slice(0, 3);
                 selectedOptions = shuffleArray([randomItem, ...otherOptions]);
                 currentQuestionText = t('questionSong');
             } else {
-                if (tracks.length < 4) { retryCount++; if (retryCount > 8) { alert(t('alertServerBusy2')); location.reload(); return; } playRound(); return; }
-                tracks = shuffleArray(tracks);
-                selectedOptions = tracks.slice(0, 4); 
-                let correctIndex = Math.floor(Math.random() * 4);
-                correctTrackData = selectedOptions[correctIndex];
+                // 歌手場/年代場：1首新歌 + 3首大兜亂干擾選項
+                let unusedTracks = allTracks.filter(t => !usedTrackIds.has(t.trackId));
+                
+                // 1. 如果呢個關鍵字連 1 首未玩過嘅歌都無 ➔ 觸發真結局判斷 (會自動 retry 8 次)
+                if (unusedTracks.length === 0) {
+                    triggerTrueEnding();
+                    return;
+                }
+                
+                // 2. 如果呢個關鍵字總共搵到嘅歌 (連埋已出過) 都少過 4 首 ➔ 湊唔夠 4 個掣
+                if (allTracks.length < 4) {
+                    triggerTrueEnding();
+                    return;
+                }
+
+                retryCount = 0; // 成功搵到歌，重置 retry 次數
+
+                // 3. 抽 1 首全新未出過嘅做正確答案
+                correctTrackData = unusedTracks[Math.floor(Math.random() * unusedTracks.length)];
                 correctIdForCheck = correctTrackData.trackId;
+
+                // 4. 喺整個大題庫入面，抽 3 首做干擾 (排除啱啱抽中嗰首)
+                let remainingPool = allTracks.filter(t => t.trackId !== correctIdForCheck);
+                let distractors = shuffleArray(remainingPool).slice(0, 3);
+                
+                // 5. 將 1首正確 + 3首干擾 撈埋一齊做 4 個按鈕
+                selectedOptions = shuffleArray([correctTrackData, ...distractors]);
                 currentQuestionText = t('questionArtist', randomItem.display);
             }
 
@@ -2798,9 +2836,8 @@
                 });
             }
         } else {
-            retryCount++;
-            if (retryCount > 8) { alert(t('alertServerBusy2')); location.reload(); return; }
-            playRound(); 
+            // 如果連 API 都拎唔到歌，直接觸發真結局判斷
+            triggerTrueEnding(); 
         }
     }
 
@@ -2825,8 +2862,10 @@
             clickedBtn.classList.add("btn-correct", "pulse-wave");
             
             if (isBuzzMode) {
-                let isSteal = lockedPlayers.size > 0;
+                // 👇 修改：用 buzzAttemptsThisRound 嚟判斷係咪執雞 (大於 0 即係有人答錯過)
+                let isSteal = buzzAttemptsThisRound > 0;
                 let pts = isSteal ? 5 : 10;
+                
                 activePlayer.score += pts;
                 document.getElementById("score-display").textContent = t('scoreLabel', activePlayer.score);
                 questionText.innerHTML += `<br><span style="color:#4CAF50; font-weight: bold;">${isSteal ? t('msgStealCorrect') : t('msgBuzzCorrect')} (+${pts})</span>`;
@@ -2943,6 +2982,40 @@
             });
             if (Date.now() < end) { requestAnimationFrame(frame); }
         }());
+    }
+
+    function triggerTrueEnding() {
+        retryCount++;
+        // 如果連續抽 8 次都搵唔夠新歌，就判定為「題庫已乾塘」
+        if (retryCount > 8) {
+            clearInterval(timerInterval);
+            document.getElementById("music-player").pause();
+            document.getElementById("loading-msg").classList.add("hidden");
+            
+            // 隱藏所有遊戲按鈕
+            document.getElementById('options').innerHTML = "";
+            document.getElementById('buzz-area').classList.add("hidden");
+            document.getElementById('who-buzzed-area').classList.add("hidden");
+            document.getElementById('lifeline-box').classList.add("hidden");
+            
+            // 顯示最高榮譽字句
+            const qText = document.getElementById("question-text");
+            qText.innerHTML = currentLang === 'zh' ? 
+                `<br><span style="color:#ffd700; font-size: 22px; font-weight: bold; text-shadow: 0 0 10px rgba(255,215,0,0.5);">👑 太神了！<br>你已經玩盡咗呢個題庫嘅所有歌！<br>頒發【終極死忠粉絲】認證！</span>` :
+                `<br><span style="color:#ffd700; font-size: 22px; font-weight: bold; text-shadow: 0 0 10px rgba(255,215,0,0.5);">👑 Amazing!<br>You've exhausted the entire library!<br>True Fan Status Achieved!</span>`;
+            
+            // 放紙碎慶祝
+            triggerConfetti();
+
+            // 直接顯示結算按鈕
+            let nextBtn = document.getElementById("next-btn");
+            nextBtn.innerText = t('nextResults');
+            nextBtn.onclick = endGame;
+            nextBtn.classList.remove("hidden");
+        } else {
+            // 如果未過 8 次，可能只係啱啱抽中一個無歌嘅 keyword，繼續 retry
+            playRound();
+        }
     }
 
     function endGame() {
