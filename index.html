@@ -229,6 +229,39 @@
         .who-buzzed-btn.locked { opacity: 0.25; filter: grayscale(100%); pointer-events: none; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
 
+        .studio-footer {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            margin-top: 35px;
+            margin-bottom: -5px;
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.25); /* 平時非常低調的透明度 */
+            font-weight: 500;
+            letter-spacing: 0.6px;
+            transition: color 0.3s ease;
+            user-select: none;
+        }
+        .studio-footer:hover {
+            color: rgba(255, 255, 255, 0.6); /* 滑鼠移過去時輕微亮起 */
+        }
+        .studio-footer-logo {
+            height: 16px; /* 精緻細小的尺寸 */
+            width: auto;
+            object-fit: contain;
+            opacity: 0.3;
+            transition: opacity 0.3s ease;
+            /* 👇 神級濾鏡：強行將任何顏色的 Logo 圖片轉為純白色扁平化風格 */
+            filter: brightness(0) invert(1); 
+        }
+        .studio-footer:hover .studio-footer-logo {
+            opacity: 0.7;
+        }
+        .studio-footer .studio-name {
+            font-weight: 600;
+        }
+
     </style>
 <body>
 
@@ -425,6 +458,12 @@
         <button class="primary-btn btn-secondary" onclick="showHistory()" style="margin-top: 12px;">
             <span class="material-icons">emoji_events</span><span data-i18n="btnHistory">歷史戰績</span>
         </button>
+
+        <div class="studio-footer">
+            <span>Developed by</span>
+            <img src="studio-logo.png" alt="Logo" class="studio-footer-logo">
+            <span class="studio-name">dayDream AteLier</span>
+        </div>
     </div> <div id="history-screen" class="hidden">
         <h2 style="color: #ffb703;" data-i18n="titleHistory">🏆 生涯戰績</h2>
         <div class="history-list" id="history-list">
