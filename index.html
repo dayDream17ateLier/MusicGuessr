@@ -2335,23 +2335,29 @@
     }
 
     async function fetchFromApi(artistObj, config) {
-        const url = `https://itunes.apple.com/search?term=${encodeURIComponent(artistObj.search)}&country=${config.country}&media=music&entity=song&limit=100&lang=zh_hk`;
+        const url = `https://itunes.apple.com/search?term=${encodeURIComponent(artistObj.search)}&country=${config.country}&media=music&entity=song&limit=100&lang=zh_hk&_t=${Date.now()}`;
         try {
             const response = await fetch(url);
+            
+            // 👇 修復 2：攔截 403/429 錯誤 (如果 4G IP 被 Apple 暫時封鎖，即時回傳空陣列)
+            if (!response.ok) {
+                console.warn("Apple API 暫時限制咗連線:", response.status);
+                return [];
+            }
+            
             const data = await response.json();
             let uniqueTracks = [];
             let seenNames = new Set();
             
-            // 👇 新增：判斷依家係咪「動漫/迷因」嘅歌單模式 (因為歌單模式係搵歌名，唔可以鎖死歌手)
             const isSongMode = !!config.hitSongs; 
 
             data.results.forEach(track => {
                 if (track.previewUrl && track.releaseDate) {
-                    const releaseYear = new Date(track.releaseDate).getFullYear();
+                    // 👇 修復 3：避開 Safari Date Bug，直接斬取頭 4 個字元做年份
+                    const releaseYear = parseInt(track.releaseDate.substring(0, 4));
                     
                     let artistMatch = true;
                     
-                    // 👇 新增：如果係「歌手模式」，啟動全自動防衛過濾網
                     if (!isSongMode) {
                         let trackArtist = track.artistName.toLowerCase();
                         
@@ -2360,12 +2366,9 @@
                                 artistMatch = false;
                             }
                         } else {
-                            // 系統自動用 Display Name (中/日文) 或 Search Keyword (英文) 做雙重保險
                             let cleanDisplay = artistObj.display.split(' (')[0].toLowerCase();
                             let cleanSearch = artistObj.search.split(' ')[0].toLowerCase();
                             
-                            // 只要 Apple 俾返嚟嘅歌手名，唔包含我哋要搵嘅字眼 (例如「瑛人」唔包含「Perfume」)
-                            // 就當係撞名或者素人翻唱，直接踢走！
                             if (!trackArtist.includes(cleanDisplay) && !trackArtist.includes(cleanSearch)) {
                                 artistMatch = false;
                             }
@@ -2383,7 +2386,10 @@
                 }
             });
             return uniqueTracks;
-        } catch (error) { return []; }
+        } catch (error) { 
+            console.error("Fetch Error:", error);
+            return []; 
+        }
     }
 
     async function getTracksFromCacheOrApi(artistObj, config) {
