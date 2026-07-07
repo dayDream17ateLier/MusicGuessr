@@ -2334,62 +2334,81 @@
         return name.split(' (')[0].split(' -')[0].split('【')[0].trim();
     }
 
+    async function fetchJSONP(url) {
+        return new Promise((resolve) => {
+            const callbackName = 'itunes_jsonp_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+            window[callbackName] = function(data) {
+                delete window[callbackName];
+                document.body.removeChild(script);
+                resolve(data);
+            };
+            const script = document.createElement('script');
+            script.src = url + '&callback=' + callbackName;
+            script.onerror = function() {
+                delete window[callbackName];
+                document.body.removeChild(script);
+                resolve({ results: [] }); // 失敗就靜靜地回傳空陣列
+            };
+            document.body.appendChild(script);
+        });
+    }
+
+    // 👇 替換：升級版搵歌引擎 (Fetch 失敗自動轉用 JSONP) 👇
     async function fetchFromApi(artistObj, config) {
-        const url = `https://itunes.apple.com/search?term=${encodeURIComponent(artistObj.search)}&country=${config.country}&media=music&entity=song&limit=100&lang=zh_hk&_t=${Date.now()}`;
+        const baseUrl = `https://itunes.apple.com/search?term=${encodeURIComponent(artistObj.search)}&country=${config.country}&media=music&entity=song&limit=100&lang=zh_hk`;
+        
+        let data = null;
         try {
-            const response = await fetch(url);
-            
-            // 👇 修復 2：攔截 403/429 錯誤 (如果 4G IP 被 Apple 暫時封鎖，即時回傳空陣列)
-            if (!response.ok) {
-                console.warn("Apple API 暫時限制咗連線:", response.status);
-                return [];
+            // 第一步：嘗試常規 Fetch (附帶防快取時間戳)
+            const response = await fetch(baseUrl + `&_t=${Date.now()}`);
+            if (response.ok) {
+                data = await response.json();
+            } else {
+                throw new Error("API 被限制，準備啟動 JSONP 備案");
             }
-            
-            const data = await response.json();
-            let uniqueTracks = [];
-            let seenNames = new Set();
-            
-            const isSongMode = !!config.hitSongs; 
+        } catch (error) {
+            console.warn("常規連線失敗，啟動 JSONP 備用引擎...", error);
+            // 第二步：常規 Fetch 失敗 (通常係 iPhone 4G 或 Safari 限制)，自動切換 JSONP
+            data = await fetchJSONP(baseUrl);
+        }
 
-            data.results.forEach(track => {
-                if (track.previewUrl && track.releaseDate) {
-                    // 👇 修復 3：避開 Safari Date Bug，直接斬取頭 4 個字元做年份
-                    const releaseYear = parseInt(track.releaseDate.substring(0, 4));
-                    
-                    let artistMatch = true;
-                    
-                    if (!isSongMode) {
-                        let trackArtist = track.artistName.toLowerCase();
-                        
-                        if (artistObj.filterArtist) {
-                            if (!trackArtist.includes(artistObj.filterArtist.toLowerCase())) {
-                                artistMatch = false;
-                            }
-                        } else {
-                            let cleanDisplay = artistObj.display.split(' (')[0].toLowerCase();
-                            let cleanSearch = artistObj.search.split(' ')[0].toLowerCase();
-                            
-                            if (!trackArtist.includes(cleanDisplay) && !trackArtist.includes(cleanSearch)) {
-                                artistMatch = false;
-                            }
+        if (!data || !data.results) return [];
+
+        let uniqueTracks = [];
+        let seenNames = new Set();
+        const isSongMode = !!config.hitSongs; 
+
+        data.results.forEach(track => {
+            if (track.previewUrl && track.releaseDate) {
+                const releaseYear = parseInt(track.releaseDate.substring(0, 4));
+                let artistMatch = true;
+                
+                if (!isSongMode) {
+                    let trackArtist = track.artistName.toLowerCase();
+                    if (artistObj.filterArtist) {
+                        if (!trackArtist.includes(artistObj.filterArtist.toLowerCase())) {
+                            artistMatch = false;
                         }
-                    }
-
-                    if (artistMatch && releaseYear >= config.minYear && releaseYear <= config.maxYear) {
-                        let cleanName = cleanTrackName(track.trackName);
-                        if (!seenNames.has(cleanName.toLowerCase())) {
-                            seenNames.add(cleanName.toLowerCase());
-                            track.cleanName = cleanName; 
-                            uniqueTracks.push(track);
+                    } else {
+                        let cleanDisplay = artistObj.display.split(' (')[0].toLowerCase();
+                        let cleanSearch = artistObj.search.split(' ')[0].toLowerCase();
+                        if (!trackArtist.includes(cleanDisplay) && !trackArtist.includes(cleanSearch)) {
+                            artistMatch = false;
                         }
                     }
                 }
-            });
-            return uniqueTracks;
-        } catch (error) { 
-            console.error("Fetch Error:", error);
-            return []; 
-        }
+
+                if (artistMatch && releaseYear >= config.minYear && releaseYear <= config.maxYear) {
+                    let cleanName = cleanTrackName(track.trackName);
+                    if (!seenNames.has(cleanName.toLowerCase())) {
+                        seenNames.add(cleanName.toLowerCase());
+                        track.cleanName = cleanName; 
+                        uniqueTracks.push(track);
+                    }
+                }
+            }
+        });
+        return uniqueTracks;
     }
 
     async function getTracksFromCacheOrApi(artistObj, config) {
