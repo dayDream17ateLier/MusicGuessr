@@ -2301,8 +2301,6 @@
         document.getElementById("game-screen").classList.remove("hidden");
         if (mode === 'party') document.getElementById("turn-indicator").classList.remove("hidden");
         
-        startBackgroundFetch();
-
         playRound();
     }
 
@@ -2391,13 +2389,15 @@
     async function getTracksFromCacheOrApi(artistObj, config) {
         const cacheKey = config.country + "|" + artistObj.search;
 
-        // 如果已經 Cache 咗，直接俾返全個池嘅歌出嚟 (唔好過濾舊歌)
-        if (globalTrackCache[cacheKey] && globalTrackCache[cacheKey].fetched) {
+        if (globalTrackCache[cacheKey] && globalTrackCache[cacheKey].fetched && globalTrackCache[cacheKey].tracks.length > 0) {
             return globalTrackCache[cacheKey].tracks;
         }
 
         let tracks = await fetchFromApi(artistObj, config);
-        globalTrackCache[cacheKey] = { tracks: tracks, fetched: true };
+        
+        if (tracks.length > 0) {
+            globalTrackCache[cacheKey] = { tracks: tracks, fetched: true };
+        }
         
         return tracks;
     }
@@ -2986,7 +2986,7 @@
 
     function triggerTrueEnding() {
         retryCount++;
-        // 如果連續抽 8 次都搵唔夠新歌，就判定為「題庫已乾塘」
+        // 如果連續抽 8 次都搵唔到歌，先判定為無歌 / 被 Block
         if (retryCount > 8) {
             clearInterval(timerInterval);
             document.getElementById("music-player").pause();
@@ -2998,23 +2998,25 @@
             document.getElementById('who-buzzed-area').classList.add("hidden");
             document.getElementById('lifeline-box').classList.add("hidden");
             
-            // 顯示最高榮譽字句
             const qText = document.getElementById("question-text");
-            qText.innerHTML = currentLang === 'zh' ? 
-                `<br><span style="color:#ffd700; font-size: 22px; font-weight: bold; text-shadow: 0 0 10px rgba(255,215,0,0.5);">👑 太神了！<br>你已經玩盡咗呢個題庫嘅所有歌！<br>頒發【終極死忠粉絲】認證！</span>` :
-                `<br><span style="color:#ffd700; font-size: 22px; font-weight: bold; text-shadow: 0 0 10px rgba(255,215,0,0.5);">👑 Amazing!<br>You've exhausted the entire library!<br>True Fan Status Achieved!</span>`;
-            
-            // 放紙碎慶祝
-            triggerConfetti();
+            if (currentRound === 1) {
+                // 如果第一局就出事，肯定係 Apple 伺服器 Block 咗，出警告字眼
+                qText.innerHTML = `<br><span style="color:#ff4d4d; font-size: 20px; font-weight: bold;">⚠️ Apple Music 伺服器繁忙 / 網絡異常<br>請稍等一兩分鐘後再重試！</span>`;
+            } else {
+                // 真正玩盡題庫嘅結局
+                qText.innerHTML = currentLang === 'zh' ? 
+                    `<br><span style="color:#ffd700; font-size: 22px; font-weight: bold; text-shadow: 0 0 10px rgba(255,215,0,0.5);">👑 太神了！<br>你已經玩盡咗呢個題庫嘅所有歌！<br>頒發【終極死忠粉絲】認證！</span>` :
+                    `<br><span style="color:#ffd700; font-size: 22px; font-weight: bold; text-shadow: 0 0 10px rgba(255,215,0,0.5);">👑 Amazing!<br>You've exhausted the entire library!<br>True Fan Status Achieved!</span>`;
+                triggerConfetti();
+            }
 
-            // 直接顯示結算按鈕
             let nextBtn = document.getElementById("next-btn");
             nextBtn.innerText = t('nextResults');
             nextBtn.onclick = endGame;
             nextBtn.classList.remove("hidden");
         } else {
-            // 如果未過 8 次，可能只係啱啱抽中一個無歌嘅 keyword，繼續 retry
-            playRound();
+            // 加 0.5 秒 Delay 緩衝，防止連環撞牆
+            setTimeout(playRound, 500); 
         }
     }
 
