@@ -2334,96 +2334,56 @@
         return name.split(' (')[0].split(' -')[0].split('【')[0].trim();
     }
 
-    function fetchItunesJSONP(url) {
-        return new Promise((resolve, reject) => {
-            // 建立一個獨一無二嘅 callback 名字
-            const callbackName = 'itunes_cb_' + Date.now() + '_' + Math.round(Math.random() * 10000);
-            
-            // 建立全域接收函數
-            window[callbackName] = function(data) {
-                resolve(data);
-                cleanup();
-            };
-            
-            // 建立 script 標籤，將請求偽裝成載入 JS 檔案
-            const script = document.createElement('script');
-            // iTunes API 支援 &callback= 參數
-            script.src = url + '&callback=' + callbackName;
-            
-            script.onerror = function() {
-                reject(new Error('JSONP Network Error'));
-                cleanup();
-            };
-            
-            function cleanup() {
-                delete window[callbackName];
-                if (script.parentNode) {
-                    script.parentNode.removeChild(script);
-                }
-            }
-            
-            document.body.appendChild(script);
-        });
-    }
-
     async function fetchFromApi(artistObj, config) {
-        // 1. 直接用 Apple 嘅網址，唔使再加任何 Proxy！
         const url = `https://itunes.apple.com/search?term=${encodeURIComponent(artistObj.search)}&country=${config.country}&media=music&entity=song&limit=100&lang=zh_hk`;
-        
         try {
-            console.log("👉 直連 Apple API:", url);
-            
-            // 2. 因為 capacitor.config 已經幫我哋偽裝咗做電腦，呢度直接 fetch 就得
             const response = await fetch(url);
-            
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`HTTP 錯誤: ${response.status} - ${errorText.substring(0, 100)}`);
-            }
-
             const data = await response.json();
-            
             let uniqueTracks = [];
             let seenNames = new Set();
+            
+            // 👇 新增：判斷依家係咪「動漫/迷因」嘅歌單模式 (因為歌單模式係搵歌名，唔可以鎖死歌手)
             const isSongMode = !!config.hitSongs; 
 
-            if (data && data.results) {
-                data.results.forEach(track => {
-                    if (track.previewUrl && track.releaseDate) {
-                        const releaseYear = new Date(track.releaseDate).getFullYear();
-                        let artistMatch = true;
+            data.results.forEach(track => {
+                if (track.previewUrl && track.releaseDate) {
+                    const releaseYear = new Date(track.releaseDate).getFullYear();
+                    
+                    let artistMatch = true;
+                    
+                    // 👇 新增：如果係「歌手模式」，啟動全自動防衛過濾網
+                    if (!isSongMode) {
+                        let trackArtist = track.artistName.toLowerCase();
                         
-                        if (!isSongMode) {
-                            let trackArtist = track.artistName.toLowerCase();
-                            if (artistObj.filterArtist) {
-                                if (!trackArtist.includes(artistObj.filterArtist.toLowerCase())) {
-                                    artistMatch = false;
-                                }
-                            } else {
-                                let cleanDisplay = artistObj.display.split(' (')[0].toLowerCase();
-                                let cleanSearch = artistObj.search.split(' ')[0].toLowerCase();
-                                if (!trackArtist.includes(cleanDisplay) && !trackArtist.includes(cleanSearch)) {
-                                    artistMatch = false;
-                                }
+                        if (artistObj.filterArtist) {
+                            if (!trackArtist.includes(artistObj.filterArtist.toLowerCase())) {
+                                artistMatch = false;
                             }
-                        }
-
-                        if (artistMatch && releaseYear >= config.minYear && releaseYear <= config.maxYear) {
-                            let cleanName = cleanTrackName(track.trackName);
-                            if (!seenNames.has(cleanName.toLowerCase())) {
-                                seenNames.add(cleanName.toLowerCase());
-                                track.cleanName = cleanName; 
-                                uniqueTracks.push(track);
+                        } else {
+                            // 系統自動用 Display Name (中/日文) 或 Search Keyword (英文) 做雙重保險
+                            let cleanDisplay = artistObj.display.split(' (')[0].toLowerCase();
+                            let cleanSearch = artistObj.search.split(' ')[0].toLowerCase();
+                            
+                            // 只要 Apple 俾返嚟嘅歌手名，唔包含我哋要搵嘅字眼 (例如「瑛人」唔包含「Perfume」)
+                            // 就當係撞名或者素人翻唱，直接踢走！
+                            if (!trackArtist.includes(cleanDisplay) && !trackArtist.includes(cleanSearch)) {
+                                artistMatch = false;
                             }
                         }
                     }
-                });
-            }
+
+                    if (artistMatch && releaseYear >= config.minYear && releaseYear <= config.maxYear) {
+                        let cleanName = cleanTrackName(track.trackName);
+                        if (!seenNames.has(cleanName.toLowerCase())) {
+                            seenNames.add(cleanName.toLowerCase());
+                            track.cleanName = cleanName; 
+                            uniqueTracks.push(track);
+                        }
+                    }
+                }
+            });
             return uniqueTracks;
-        } catch (error) { 
-            console.error("❌ API 請求失敗:", error.message || error);
-            return []; 
-        }
+        } catch (error) { return []; }
     }
 
     async function getTracksFromCacheOrApi(artistObj, config) {
