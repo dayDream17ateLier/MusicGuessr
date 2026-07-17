@@ -1,4 +1,4 @@
-日<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
@@ -2335,68 +2335,76 @@
     }
 
     async function fetchFromApi(artistObj, config) {
-        // 🌟 終極破關秘密：日本 (jp) 同韓國 (kr) 嘅本土版權極嚴，經常抽起 30 秒試聽！
-        // 解決方法：強制將日韓歌曲導向香港 (hk) 區 iTunes 搜尋，即刻解鎖全部試聽音檔！
+        // 🌟 終極破關秘密 1：強制將日韓歌曲導向香港 (hk) 區 iTunes 搜尋，解鎖所有 30 秒試聽音檔！
         const searchCountry = (config.country === 'jp' || config.country === 'kr') ? 'hk' : config.country;
         
-        // 🚀 移除所有 Proxy，用最極速嘅原生連線直插 Apple 機房！
-        const url = `https://itunes.apple.com/search?term=${encodeURIComponent(artistObj.search)}&country=${searchCountry}&media=music&entity=song&limit=100`;
+        // 🌟 終極破關秘密 2：移除 lang=zh_hk，確保 Apple 唔會發癲傳回 0 首歌！
+        const appleUrl = `https://itunes.apple.com/search?term=${encodeURIComponent(artistObj.search)}&country=${searchCountry}&media=music&entity=song&limit=100`;
 
-        try {
-            const response = await fetch(url);
-            const data = await response.json();
+        // 🚀 終極破關秘密 3：用 JSONP 完美避開 CORS 阻截，唔使靠 Proxy，保證 0.1 秒極速！
+        return new Promise((resolve) => {
+            const callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
             
-            if (!data || !data.results) return [];
+            window[callbackName] = function(data) {
+                // 清理手尾
+                delete window[callbackName];
+                document.body.removeChild(script);
 
-            let uniqueTracks = [];
-            let seenNames = new Set();
-            const isSongMode = !!config.hitSongs; 
+                let uniqueTracks = [];
+                let seenNames = new Set();
+                const isSongMode = !!config.hitSongs; 
 
-            data.results.forEach(track => {
-                // 🛡️ 防死機裝甲：確保 Apple 傳回嚟嘅資料有齊歌名，而且【必須有 previewUrl 音檔】
-                if (track.previewUrl && track.releaseDate && track.trackName) {
-                    const releaseYear = new Date(track.releaseDate).getFullYear();
-                    let artistMatch = true;
-                    
-                    if (!isSongMode) {
-                        let trackArtist = (track.artistName || "").toLowerCase();
-                        
-                        // 🔪 第一關：殺死翻唱狗 (無情踢走 Cover、Tribute 雜錦碟版本)
-                        if (trackArtist.includes("cover") || trackArtist.includes("tribute") || trackArtist.includes("karaoke") || trackArtist.includes("instrumental")) {
-                            artistMatch = false;
-                        } else {
-                            // 🧠 第二關：智能比對 (解決跨國譯名問題，例如「少女時代」vs「Girls' Generation」)
-                            let kw1 = (artistObj.filterArtist || "").toLowerCase();
-                            let kw2 = (artistObj.display || "").split(' (')[0].toLowerCase();
-                            let kw3 = (artistObj.search || "").split(' ')[0].toLowerCase();
+                if (data && data.results) {
+                    data.results.forEach(track => {
+                        // 確保有歌名同埋【最重要：有 previewUrl 音檔】
+                        if (track.previewUrl && track.releaseDate && track.trackName) {
+                            const releaseYear = new Date(track.releaseDate).getFullYear();
+                            let artistMatch = true;
                             
-                            let validKeywords = [kw1, kw2, kw3].filter(k => k.length > 1);
-                            
-                            // 只要 Apple 俾嘅歌手名，包含我哋任何一個設定好嘅關鍵字，就當過關！
-                            let isMatch = validKeywords.some(kw => trackArtist.includes(kw));
-                            
-                            if (!isMatch && validKeywords.length > 0) {
-                                artistMatch = false;
+                            if (!isSongMode) {
+                                let trackArtist = (track.artistName || "").toLowerCase();
+                                
+                                // 🔪 殺死翻唱狗 (無情踢走 Cover、Tribute 雜錦碟版本)
+                                if (trackArtist.includes("cover") || trackArtist.includes("tribute") || trackArtist.includes("karaoke") || trackArtist.includes("instrumental")) {
+                                    artistMatch = false;
+                                } else {
+                                    // 🧠 智能比對 (解決跨國譯名問題)
+                                    let kw1 = (artistObj.filterArtist || "").toLowerCase();
+                                    let kw2 = (artistObj.display || "").split(' (')[0].toLowerCase();
+                                    let kw3 = (artistObj.search || "").split(' ')[0].toLowerCase();
+                                    
+                                    let validKeywords = [kw1, kw2, kw3].filter(k => k.length > 1);
+                                    let isMatch = validKeywords.some(kw => trackArtist.includes(kw));
+                                    
+                                    if (!isMatch && validKeywords.length > 0) {
+                                        artistMatch = false;
+                                    }
+                                }
+                            }
+
+                            if (artistMatch && releaseYear >= config.minYear && releaseYear <= config.maxYear) {
+                                let cleanName = cleanTrackName(track.trackName);
+                                if (!seenNames.has(cleanName.toLowerCase())) {
+                                    seenNames.add(cleanName.toLowerCase());
+                                    track.cleanName = cleanName; 
+                                    uniqueTracks.push(track);
+                                }
                             }
                         }
-                    }
-
-                    if (artistMatch && releaseYear >= config.minYear && releaseYear <= config.maxYear) {
-                        let cleanName = cleanTrackName(track.trackName);
-                        // 確保同一首歌唔會出現兩次 (例如 Album 版同 Single 版撞名)
-                        if (!seenNames.has(cleanName.toLowerCase())) {
-                            seenNames.add(cleanName.toLowerCase());
-                            track.cleanName = cleanName; 
-                            uniqueTracks.push(track);
-                        }
-                    }
+                    });
                 }
-            });
-            return uniqueTracks;
-        } catch (error) { 
-            console.error("Fetch 失敗:", error);
-            return []; 
-        }
+                resolve(uniqueTracks);
+            };
+
+            const script = document.createElement('script');
+            script.src = `${appleUrl}&callback=${callbackName}`;
+            script.onerror = function() {
+                delete window[callbackName];
+                document.body.removeChild(script);
+                resolve([]); 
+            };
+            document.body.appendChild(script);
+        });
     }
 
     async function getTracksFromCacheOrApi(artistObj, config) {
